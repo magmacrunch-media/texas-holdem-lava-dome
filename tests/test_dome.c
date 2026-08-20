@@ -312,6 +312,93 @@ static void test_session_is_survivable_but_not_forever(void) {
     check_int(dome_score(&careful), before, "walking away keeps exactly what was on the table");
 }
 
+/* The bank is not a one-way door. Without a way back, a player whose stack falls
+ * below the minimum bet while holding a full bank reaches a betting screen with
+ * no legal move -- money on the table, none of it reachable.
+ */
+static void test_digging_into_savings(void) {
+    printf("dome: pulling chips back out of the bank\n");
+
+    Dome d;
+    dome_init(&d);
+    d.chips = 3;
+    d.bank  = 400;
+
+    check(dome_must_dig_into_savings(&d),
+          "a stack below the minimum with a bank is a dead end worth flagging");
+
+    check_int(dome_withdraw_from_bank(&d, 100), 100, "chips come back out");
+    check_int(d.chips, 103, "onto the table");
+    check_int(d.bank, 300, "and out of the bank");
+    check(!dome_must_dig_into_savings(&d), "which resolves the dead end");
+
+    check_int(dome_withdraw_from_bank(&d, 99999), 300, "asking for more empties the bank");
+    check_int(d.bank, 0, "leaving nothing banked");
+    check_int(dome_withdraw_from_bank(&d, 50), 0, "and nothing further to fetch");
+    check_int(dome_withdraw_from_bank(&d, -10), 0, "a negative amount is ignored");
+
+    /* Not a dead end when there is nothing to fetch -- that is just bust. */
+    Dome broke;
+    dome_init(&broke);
+    broke.chips = 2;
+    broke.bank  = 0;
+    check(!dome_must_dig_into_savings(&broke),
+          "a small stack with an empty bank is not a dead end, it is the end");
+
+    /* Nor once the session is over. */
+    Dome done;
+    dome_init(&done);
+    done.chips = 1;
+    done.bank  = 500;
+    done.session_over = 1;
+    check(!dome_must_dig_into_savings(&done), "a finished session is not offered a way out");
+
+    /* Banking your whole stack must not be a trap.
+     *
+     * Found by playing, not by reading: a soak run banked everything, the next
+     * round charged an ante it could not pay, and the session ended as a bust
+     * holding 612 chips. Doing the safe thing was punished, which is the exact
+     * opposite of what the bank is for. The ante must not be charged while this
+     * is true. */
+    Dome banked_out;
+    dome_init(&banked_out);
+    dome_start_round(&banked_out);
+    dome_charge_ante(&banked_out);
+    dome_cash_out(&banked_out, banked_out.chips);      /* bank it all */
+    check_int(banked_out.chips, 0, "banking everything empties the stack");
+    check(banked_out.bank > 0, "and fills the bank");
+
+    check(dome_start_round(&banked_out), "the next round still starts");
+    check(dome_needs_savings_for_ante(&banked_out),
+          "and the player is short of the ante with money to fetch");
+    check(!banked_out.session_over,
+          "so the session is NOT over -- charging here would be the trap");
+
+    dome_withdraw_from_bank(&banked_out, 100);
+    check(dome_charge_ante(&banked_out), "after fetching chips the ante is payable");
+    check(!banked_out.session_over, "and play continues");
+
+    /* Genuinely empty is still the end -- the fix must not make bust unreachable. */
+    Dome truly_broke;
+    dome_init(&truly_broke);
+    truly_broke.chips = 2;
+    truly_broke.bank  = 0;
+    truly_broke.round = 1;
+    check(!dome_needs_savings_for_ante(&truly_broke),
+          "an empty bank offers nothing to fetch");
+    check_int(dome_charge_ante(&truly_broke), 0, "so the ante ends the session");
+
+    /* Round trip: banking and unbanking the same chips must conserve them.
+       This is the property that would catch a sign error in either direction. */
+    Dome rt;
+    dome_init(&rt);
+    int before = rt.chips + rt.bank;
+    dome_cash_out(&rt, 250);
+    dome_withdraw_from_bank(&rt, 250);
+    check_int(rt.chips + rt.bank, before, "chips are conserved across a round trip");
+    check_int(rt.chips, STARTING_CHIPS, "and end up exactly where they started");
+}
+
 int main(void) {
     test_ante_schedule();
     test_threshold_curve();
@@ -320,6 +407,7 @@ int main(void) {
     test_betting();
     test_resolution();
     test_cash_out_and_escape();
+    test_digging_into_savings();
     test_session_is_survivable_but_not_forever();
     return report();
 }

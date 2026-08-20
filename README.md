@@ -83,6 +83,27 @@ Budget the memory before committing to a format. Clips are held decoded in RAM:
 Against the Wii's 24MB, a long track at 48kHz stereo does not fit. Downsample the
 music loop with `audio_play_music_fmt()`; keep short effects at 48kHz stereo.
 
+## Rendering
+
+Cards are drawn, not loaded — there are no image assets. The face is one of
+magnolia's rounded panels, the rank is text, and the suit is a pip built from
+GRRLIB primitives, because Press Start 2P has no suit glyphs and a missing glyph
+on a CRT is indistinguishable from a bug.
+
+`GRRLIB_NGoneFilled` is a triangle fan and so is only honest about convex
+shapes. A diamond is therefore one polygon, while hearts, spades and clubs are
+composed from circles plus a triangle. Colour carries the suit redundantly, so a
+pip that softens at distance still reads red or black.
+
+**One magnolia limitation found here.** Every text helper in `ui_utils` draws a
+hardcoded black drop shadow two pixels down and right. That suits the games it
+was written for, which put light text on dark backgrounds — and it wrecks a red
+rank on a pale card face, turning a Q into a smudge. This game draws card ranks
+with `GRRLIB_PrintfTTF` directly instead. A shadow-colour argument would fix it
+for everyone, but one consumer is not two, so it stays here until a second game
+wants a light background. It is the first real extraction candidate this port
+has produced.
+
 ## Testing
 
 ```bash

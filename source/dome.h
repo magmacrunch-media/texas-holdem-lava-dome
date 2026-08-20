@@ -37,7 +37,11 @@ typedef enum {
     DOME_PHASE_FLOP,
     DOME_PHASE_TURN,
     DOME_PHASE_RIVER,
-    DOME_PHASE_CASHOUT
+    DOME_PHASE_CASHOUT,
+    /* Short of the ante with money in the bank. A real state of the round, not
+       a UI mode: the ante has not been charged yet and cannot be until the
+       player fetches chips, so the round is genuinely waiting on them. */
+    DOME_PHASE_SAVINGS
 } DomePhase;
 
 typedef struct {
@@ -107,6 +111,30 @@ int dome_payout_hundredths(HandRank rank);
 /* Moves chips to the bank, where they cannot be lost. Clamped to what is there;
    returns the amount actually banked. */
 int dome_cash_out(Dome *d, int amount);
+
+/* The other direction: pulls banked chips back onto the table. Clamped to the
+   bank; returns the amount actually withdrawn.
+ *
+ * This exists for one situation, and without it that situation is a dead end: a
+ * stack too small to meet the minimum bet, with a bank that is not empty. The
+ * player has chips, they are just in the wrong place, and a betting screen they
+ * cannot act on is not a decision. Banking is safe but not permanent -- which is
+ * also what stops "bank everything immediately" from being the whole strategy. */
+int dome_withdraw_from_bank(Dome *d, int amount);
+
+/* Whether the player is in that dead end and should be offered the way out:
+   short of the minimum bet, with something banked to fetch. */
+int dome_must_dig_into_savings(const Dome *d);
+
+/* The same dead end one step earlier, and the more important one: short of the
+   round's ante, with a bank that could cover it.
+ *
+ * Without this, banking your whole stack is a trap. You do the safe thing, the
+ * next round charges an ante you cannot pay, and the session ends as a bust
+ * holding a full bank -- punished for banking, which is the opposite of what
+ * the mechanic is for. The ante must not be charged while this is true; give
+ * the player the chance to fetch chips first. */
+int dome_needs_savings_for_ante(const Dome *d);
 
 /* Ends the session on the player's terms: banks everything left and marks the
    session escaped rather than bust. The score is the same either way -- what

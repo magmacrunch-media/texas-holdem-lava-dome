@@ -187,6 +187,28 @@ int dome_cash_out(Dome *d, int amount) {
     return actual;
 }
 
+int dome_withdraw_from_bank(Dome *d, int amount) {
+    if (amount < 0) return 0;
+
+    int actual = amount < d->bank ? amount : d->bank;
+    d->bank  -= actual;
+    d->chips += actual;
+    return actual;
+}
+
+int dome_must_dig_into_savings(const Dome *d) {
+    /* MIN_BET rather than dome_min_bet(), deliberately. dome_min_bet() reports
+       what is legal to bet given the stack -- with 3 chips it says 3, which is
+       true and unhelpful here. The question this answers is whether the stack
+       has fallen below a real bet while there is still money to fetch. */
+    return d->chips < MIN_BET && d->bank > 0 && !d->session_over;
+}
+
+int dome_needs_savings_for_ante(const Dome *d) {
+    if (d->session_over) return 0;
+    return d->chips < dome_ante_for_round(d->round) && d->bank > 0;
+}
+
 int dome_can_escape(const Dome *d) {
     return d->phase == DOME_PHASE_CASHOUT && d->chips > 0 && !d->session_over;
 }
