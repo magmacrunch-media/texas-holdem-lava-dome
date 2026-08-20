@@ -83,6 +83,50 @@ Budget the memory before committing to a format. Clips are held decoded in RAM:
 Against the Wii's 24MB, a long track at 48kHz stereo does not fit. Downsample the
 music loop with `audio_play_music_fmt()`; keep short effects at 48kHz stereo.
 
+## Testing
+
+```bash
+make test    # needs only a C compiler; no devkitPPC, no emulator
+```
+
+The rules are plain C with no libogc in them, so they run on the machine you are
+sitting at. `make test` deliberately does **not** depend on the `.dol` build —
+depending on it would drag devkitPPC into the one target that exists for not
+needing it.
+
+**The evaluator is checked against arithmetic, not against itself.** There is no
+reference implementation to agree with, and a hand-written list of poker cases
+only proves the evaluator matches whatever the person writing the cases believed
+— which, for the wheel and the ace-high straight, is exactly the thing in doubt.
+So the test deals every five-card hand that exists, classifies each one, and
+checks the ten totals against the published frequencies:
+
+| Hand | Count |
+|---|---|
+| Royal flush | 4 |
+| Straight flush | 36 |
+| Four of a kind | 624 |
+| Full house | 3,744 |
+| Flush | 5,108 |
+| Straight | 10,200 |
+| Three of a kind | 54,912 |
+| Two pair | 123,552 |
+| One pair | 1,098,240 |
+| High card | 1,302,540 |
+
+Those are properties of a 52-card deck, not of this code. They sum to 2,598,960,
+so the total is self-checking too, and the whole sweep takes about a second.
+
+It is a sharp instrument. Removing just the wheel case from the straight
+detection moves four of the ten counts — straights fall by 1,020 and straight
+flushes by 4, because 1,024 wheels exist and four of them are suited — and the
+failure names every one.
+
+Seven cards is 133,784,560 combinations, too many for every build. That path is
+covered by a property instead: the best hand out of seven can never rank below
+any five of those seven, checked over 20,000 seeded deals against all 21 subsets
+of each.
+
 ## Testing without a controller
 
 Reaching gameplay by hand needs button presses into an emulator window. Instead:

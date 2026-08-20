@@ -6,7 +6,9 @@
 #---------------------------------------------------------------------------------
 # The host tests deliberately need no cross-compiler: requiring devkitPPC to run
 # them would put them out of reach on the machine where they are most useful.
-ifeq ($(filter test,$(MAKECMDGOALS)),)
+HOST_TESTS := test-hand-eval
+
+ifeq ($(filter test $(HOST_TESTS),$(MAKECMDGOALS)),)
 ifeq ($(strip $(DEVKITPPC)),)
 $(error "Please set DEVKITPPC. export DEVKITPPC=<path to>devkitPPC")
 endif
@@ -84,7 +86,7 @@ $(filter-out assets.o,$(OFILES)): assets.h
 else
 #---------------------------------------------------------------------------------
 
-.PHONY: $(BUILD) clean all deploy dolphin test
+.PHONY: $(BUILD) clean all deploy dolphin test $(HOST_TESTS)
 
 # Stated explicitly: the host-test rule below would otherwise be the first
 # target in the file, and a bare `make` would run the tests instead of
@@ -95,14 +97,29 @@ else
 # the machine you are sitting at, in a second, with no emulator in the loop --
 # which is where game rules belong, because a rule that is subtly wrong looks
 # exactly like a rule that is right until someone plays far enough to notice.
-HOSTCC   ?= cc
-TESTSRC  ?= $(wildcard tests/*.c)
-TESTDEPS ?= 
+#
+# One binary per test file, each naming what it links, the same shape magnolia
+# uses. The list is the record of which modules are host-clean; a wildcard over
+# source/ would try to link the rendering and fail with something far less
+# informative.
+#
+# -O2 is not incidental: test_hand_eval enumerates all 2,598,960 five-card
+# hands, and the difference between an optimised and unoptimised sweep is the
+# difference between a test you run on every build and one you start avoiding.
+HOSTCC     ?= cc
+HOSTCFLAGS := -Wall -Wextra -O2 -I source -I tests
 
-test:
+# Note the plain mkdir rather than an order-only dependency on $(BUILD): here
+# $(BUILD) is the target that cross-compiles the game, not merely a directory,
+# so depending on it would drag devkitPPC into `make test` and undo the one
+# property these tests exist for.
+test: test-hand-eval
+
+test-hand-eval:
 	@mkdir -p $(BUILD)
-	@$(HOSTCC) -Wall -Wextra -I source -o $(BUILD)/test $(TESTSRC) $(TESTDEPS)
-	@$(BUILD)/test
+	@$(HOSTCC) $(HOSTCFLAGS) -o $(BUILD)/$@ \
+	    tests/test_hand_eval.c source/hand_eval.c source/cards.c
+	@$(BUILD)/$@
 
 all: $(BUILD)
 
