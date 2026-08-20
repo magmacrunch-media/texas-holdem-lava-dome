@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<app version="1">
+  <name>Texas Hold'Em Lava Dome</name>
+  <coder>MagmaCrunch</coder>
+  <version>0.1.0</version>
+  <release_date>20260820</release_date>
+  <short_description>Solo Hold'Em against the dome</short_description>
+  <long_description>The world's most social card game, played completely alone. An escalating ante drains your stack every round and your hand is scored against a threshold that climbs with it. Bank what you win or press your luck: escape the dome with your chips, or lose the lot.
+
+Built with magnolia, a Wii homebrew game engine by MagmaCrunch.</long_description>
+</app>
