@@ -25,7 +25,10 @@ static const Palette LAVA = {
     .highlight    = PAL_RGB(0xffcc00),   /* yellow */
 
     .win          = PAL_RGB(0xffcc00),   /* yellow */
-    .loss         = PAL_RGB(0xcc2200)    /* lavaBright */
+    .loss         = PAL_RGB(0xcc2200),   /* lavaBright */
+
+    .risk_low     = PAL_RGB(0xffe680),   /* yellowPale */
+    .risk_high    = PAL_RGB(0xff5500)    /* orangeHot */
 };
 
 const Palette *palette_lava(void) {

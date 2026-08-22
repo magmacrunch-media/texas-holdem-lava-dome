@@ -6,7 +6,7 @@
 #---------------------------------------------------------------------------------
 # The host tests deliberately need no cross-compiler: requiring devkitPPC to run
 # them would put them out of reach on the machine where they are most useful.
-HOST_TESTS := test-hand-eval test-dome
+HOST_TESTS := test-hand-eval test-dome test-anim
 
 ifeq ($(filter test $(HOST_TESTS),$(MAKECMDGOALS)),)
 ifeq ($(strip $(DEVKITPPC)),)
@@ -113,7 +113,7 @@ HOSTCFLAGS := -Wall -Wextra -O2 -I source -I tests
 # $(BUILD) is the target that cross-compiles the game, not merely a directory,
 # so depending on it would drag devkitPPC into `make test` and undo the one
 # property these tests exist for.
-test: test-hand-eval test-dome
+test: test-hand-eval test-dome test-anim
 
 test-hand-eval:
 	@mkdir -p $(BUILD)
@@ -125,6 +125,12 @@ test-dome:
 	@mkdir -p $(BUILD)
 	@$(HOSTCC) $(HOSTCFLAGS) -o $(BUILD)/$@ \
 	    tests/test_dome.c source/dome.c source/hand_eval.c source/cards.c
+	@$(BUILD)/$@
+
+test-anim:
+	@mkdir -p $(BUILD)
+	@$(HOSTCC) $(HOSTCFLAGS) -o $(BUILD)/$@ \
+	    tests/test_anim.c source/anim.c
 	@$(BUILD)/$@
 
 all: $(BUILD)

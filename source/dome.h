@@ -64,6 +64,16 @@ void dome_init(Dome *d);
 int dome_ante_for_round(int round);
 int dome_threshold_for_round(int round);
 
+/* What the next round will cost, and whether the stack is short enough that it
+   is the thing to worry about. Ported from js/dome.js's antePreview() and the
+   `danger` flag ui.js computes from it.
+ *
+ * The depth bar already says when the ante is about to rise. This is the
+ * sharper question and the one the cash-out decision actually turns on: not
+ * "is it going up" but "can I still pay it". */
+int dome_next_ante(const Dome *d);
+int dome_ante_danger(const Dome *d);
+
 /* Flavour text for the round's depth, themed after the band's songs. */
 const char *dome_depth_label(int round);
 
@@ -84,10 +94,33 @@ int dome_charge_ante(Dome *d);
 int dome_min_bet(const Dome *d);
 int dome_max_bet(const Dome *d);
 
+/* Whether there is anything left to raise with. A player already all-in has a
+   hand to watch and no decisions left in it. */
+int dome_can_raise(const Dome *d);
+
 /* Commits chips to the pot, clamped into the legal range. Returns the amount
    actually taken. Deducted immediately, so `chips` always reads as what is
-   still yours to lose. */
+   still yours to lose.
+ *
+ * This is also the raise: it adds to `current_bet` rather than replacing it, so
+ * a stake built up across four streets is one number by the showdown and the
+ * payout multiplier applies to the whole of it. js/betting.js splits placeBet()
+ * from raise() and they do the same thing; one function here says so. */
 int dome_place_bet(Dome *d, int amount);
+
+/* How exposed a bet of `amount` leaves the player, as the web build's risk
+   badge reads it (js/betting.js riskLevel()). Kept in whole percent rather than
+   a float for the same reason the payouts are in hundredths: money and the
+   warnings about it should not depend on this console's floating point. */
+typedef enum {
+    RISK_LOW,
+    RISK_MEDIUM,
+    RISK_HIGH,
+    RISK_ALL_IN
+} RiskLevel;
+
+RiskLevel   dome_risk_level(const Dome *d, int amount);
+const char *dome_risk_label(RiskLevel r);
 
 typedef struct {
     HandRank hand;
@@ -97,16 +130,43 @@ typedef struct {
     int chips_won;      /* winnings on top of the stake returned */
     int chips_lost;     /* the stake, when the dome wins */
     int bust;
+    int folded;         /* walked away from the hand rather than lost it */
+
+    /* Chosen once, when the hand settles -- not when it is drawn. The result
+       panel is redrawn every frame from this struct, so a quip picked at draw
+       time would change on every one of them. */
+    const char *flavor;
 } DomeResult;
 
 /* Scores the finished hand against the round's threshold and settles the bet.
    On a win the stake comes back along with the winnings; on a loss it is gone.
    Moves to DOME_PHASE_CASHOUT. */
-DomeResult dome_resolve(Dome *d, const HandResult *hand);
+DomeResult dome_resolve(Dome *d, const HandResult *hand, Rng *rng);
+
+/* Gives up the hand. The stake was taken when it was placed, so folding is
+   simply not getting it back -- there is no extra penalty, and none is needed
+   when the ante is already climbing.
+ *
+ * The hand is never consulted, which is the point: folding is the decision you
+ * make when the board has missed you and the next street will not save it. */
+DomeResult dome_fold(Dome *d, Rng *rng);
 
 /* Payout is the stake times this, in hundredths -- 250 means two and a half
    times. Fractions are real here: a Flush pays 2.5x and Two Pair 1.25x. */
 int dome_payout_hundredths(HandRank rank);
+
+/* The band-themed quips from js/config.js, picked uniformly at random.
+ *
+ * They take the game's own Rng rather than rand() so that a session stays
+ * reproducible from its seed, which is already true of every shuffle.
+ *
+ * FLAVOR_BUST covers a lost hand as well as a real bust, exactly as the web
+ * build uses it -- dome.js reaches for the same array in resolveHand() and in
+ * _bust(). With no sound and no opponent, this text is most of what the dome
+ * has to say for itself, so it is quoted rather than rewritten. */
+const char *dome_flavor_win(Rng *rng);
+const char *dome_flavor_bust(Rng *rng);
+const char *dome_flavor_escape(Rng *rng);
 
 /* Moves chips to the bank, where they cannot be lost. Clamped to what is there;
    returns the amount actually banked. */
@@ -142,7 +202,10 @@ int dome_needs_savings_for_ante(const Dome *d);
 void dome_escape(Dome *d);
 
 /* Whether escaping is offered: only between rounds, and only with something to
-   walk away with. */
+   walk away with. Between rounds is both DOME_PHASE_CASHOUT and the
+   DOME_PHASE_IDLE that follows it -- they are one decision wearing two phase
+   names, and banking a few chips moves the player from the first to the second
+   without changing what is on offer. */
 int dome_can_escape(const Dome *d);
 
 /* The score a session is worth. The bank, and only the bank -- chips still on

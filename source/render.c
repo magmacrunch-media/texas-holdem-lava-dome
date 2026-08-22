@@ -108,10 +108,39 @@ static void draw_plain_text(int design_x, int design_y, const char *text,
                      ui_map_size(design_size), color);
 }
 
-void render_card(int x, int y, Card c, const Palette *p) {
-    u32 ink = palette_pip_color(p, c.suit);
+void render_text_centered_in(int design_x, int design_y,
+                             int design_w, int design_h,
+                             const char *text, unsigned int design_size,
+                             u32 color) {
+    if (!ttf_font || !text) return;
 
-    ui_draw_panel(x, y, CARD_W, CARD_H, p->card_face, p->card_border, CARD_RADIUS);
+    /* Same arithmetic as ui_draw_text_centered_in(), minus the shadow pass. The
+       width has to be measured at the mapped size rather than the design size,
+       or the centring drifts on any video mode that is not 640x480. */
+    unsigned int size = ui_map_size(design_size);
+    u32 tw = GRRLIB_WidthTTF(ttf_font, text, size);
+
+    int x = ui_map_x(design_x) + (ui_map_w(design_w) - (int)tw) / 2;
+    int y = ui_map_y(design_y) + (ui_map_h(design_h) - (int)size) / 2;
+
+    GRRLIB_PrintfTTF(x, y, ttf_font, text, size, color);
+}
+
+u32 render_fade(u32 color, float alpha) {
+    if (alpha >= 1.0f) return color;
+    if (alpha <= 0.0f) return color & 0xFFFFFF00u;
+
+    unsigned a = (unsigned)((float)(color & 0xFFu) * alpha + 0.5f);
+    if (a > 0xFFu) a = 0xFFu;
+    return (color & 0xFFFFFF00u) | a;
+}
+
+static void draw_card_face(int x, int y, Card c, const Palette *p, float alpha) {
+    u32 ink = render_fade(palette_pip_color(p, c.suit), alpha);
+
+    ui_draw_panel(x, y, CARD_W, CARD_H,
+                  render_fade(p->card_face, alpha),
+                  render_fade(p->card_border, alpha), CARD_RADIUS);
 
     /* Rank in the corner with a small pip beneath it, the way the index on a
        real card reads. */
@@ -120,6 +149,37 @@ void render_card(int x, int y, Card c, const Palette *p) {
 
     /* The one that carries the suit across a room. */
     render_pip(x + CARD_W / 2, y + CARD_H / 2 + 12, 34, c.suit, ink);
+}
+
+void render_card(int x, int y, Card c, const Palette *p) {
+    draw_card_face(x, y, c, p, 1.0f);
+}
+
+/* How far above its slot a card starts, and how long it takes to land. */
+#define REVEAL_RISE  26
+
+/* A card arriving: it falls the last few pixels into its slot and fades up.
+ *
+ * It slides rather than scales, and that is not only for the arithmetic. Press
+ * Start 2P is a pixel font, and scaling a card means drawing its rank at
+ * fractional sizes on every frame of the animation -- which is the same smudge
+ * the drop-shadow workaround above exists to avoid, arriving by a different
+ * route. Sliding leaves every glyph at the one size it was designed for.
+ *
+ * Eased out, so the card is quickest when it is furthest away and settles
+ * gently. A linear slide reads as a card being pushed; this reads as one being
+ * dealt. */
+static void render_card_revealing(int x, int y, Card c, const Palette *p, float t) {
+    if (t >= 1.0f) {
+        render_card(x, y, c, p);
+        return;
+    }
+    if (t < 0.0f) t = 0.0f;
+
+    float e = ease_out_quad(t);
+    int   dy = (int)((1.0f - e) * (float)REVEAL_RISE);
+
+    draw_card_face(x, y - dy, c, p, e);
 }
 
 void render_border(const Palette *p) {
@@ -144,15 +204,16 @@ void render_card_slot(int x, int y, const char *label, const Palette *p) {
 
 /* --- the table ----------------------------------------------------------- */
 
-static void render_header(const Dome *d, const Palette *p) {
+static void render_header(const Dome *d, int shown_chips, int shown_bank,
+                          const Palette *p) {
     ui_draw_panel(PANEL_X, 8, PANEL_W, 34, p->panel_bg, p->panel_border, PANEL_RADIUS);
 
     char buf[32];
 
-    snprintf(buf, sizeof(buf), "CHIPS %d", d->chips);
+    snprintf(buf, sizeof(buf), "CHIPS %d", shown_chips);
     ui_draw_text_shadow(PANEL_X + 14, 18, buf, 12, p->text);
 
-    snprintf(buf, sizeof(buf), "BANK %d", d->bank);
+    snprintf(buf, sizeof(buf), "BANK %d", shown_bank);
     ui_draw_text_shadow(PANEL_X + 190, 18, buf, 12, p->win);
 
     snprintf(buf, sizeof(buf), "R%d", d->round);
@@ -176,14 +237,50 @@ static void render_depth_bar(const Dome *d, const Palette *p) {
     }
 }
 
+/* Where the player stands, on screen at all times.
+ *
+ * The hand name alone was not enough. Everything in this game is a decision
+ * about a number -- points against a threshold -- and a player who has to
+ * remember what the threshold was, or work out whether a straight clears it,
+ * is being asked to do the game's arithmetic in their head. The web build
+ * carries the same line for the same reason.
+ *
+ * No arrows on the badge. Press Start 2P has no triangle glyphs, and a missing
+ * glyph on a CRT is indistinguishable from a bug -- the same reason the pips
+ * above are drawn rather than typed. */
+static void render_hand_status(const Dome *d, const HandResult *hand,
+                               int card_count, const Palette *p) {
+    if (!hand || !hand->valid) return;
+
+    ui_draw_centered_text(288, hand_name(hand->rank), 13, p->text);
+
+    /* Points only once there is a five-card hand to have any. Below that the
+       evaluator is reading pairs off two or four cards and its points would be
+       a promise the board has not made yet. */
+    if (card_count < 5) {
+        ui_draw_centered_text(306, "STILL COMING", 10, p->text_dim);
+        return;
+    }
+
+    int threshold = dome_threshold_for_round(d->round);
+    int beating   = hand->points >= threshold;
+
+    char line[64];
+    snprintf(line, sizeof(line), "%d PTS vs %d  -  %s",
+             hand->points, threshold, beating ? "BEATING" : "LOSING");
+    ui_draw_centered_text(306, line, 10, beating ? p->win : p->loss);
+}
+
 void render_table(const Dome *d,
+                  int shown_chips, int shown_bank,
                   const Card *hole, int hole_count,
                   const Card *community, int community_count,
+                  int reveal_from, float reveal_t,
                   const HandResult *hand,
                   const Palette *p) {
     GRRLIB_FillScreen(p->table_bg);
 
-    render_header(d, p);
+    render_header(d, shown_chips, shown_bank, p);
     render_depth_bar(d, p);
 
     /* Five slots always, so the shape of a Hold'Em board is on screen from the
@@ -192,85 +289,148 @@ void render_table(const Dome *d,
     static const char *STREET[5] = { "F", "F", "F", "T", "R" };
     for (int i = 0; i < 5; i++) {
         int x = render_community_x(i);
-        if (i < community_count) {
-            render_card(x, COMMUNITY_Y, community[i], p);
-        } else {
+        if (i >= community_count) {
             render_card_slot(x, COMMUNITY_Y, STREET[i], p);
+        } else if (reveal_from >= 0 && i >= reveal_from) {
+            render_card_revealing(x, COMMUNITY_Y, community[i], p, reveal_t);
+        } else {
+            render_card(x, COMMUNITY_Y, community[i], p);
         }
     }
 
     for (int i = 0; i < 2; i++) {
         int x = render_hole_x(i);
-        if (i < hole_count) {
-            render_card(x, HOLE_Y, hole[i], p);
-        } else {
+        if (i >= hole_count) {
             render_card_slot(x, HOLE_Y, "?", p);
+        } else if (reveal_from == RENDER_REVEAL_HOLE) {
+            render_card_revealing(x, HOLE_Y, hole[i], p, reveal_t);
+        } else {
+            render_card(x, HOLE_Y, hole[i], p);
         }
     }
 
-    if (hand && hand->valid) {
-        ui_draw_centered_text(HOLE_Y + CARD_H + 10, hand_name(hand->rank), 14, p->text);
-    }
+    render_hand_status(d, hand, hole_count + community_count, p);
 }
 
 /* --- the phase panel ------------------------------------------------------ */
 
-#define OPTION_H   34
+#define OPTION_H   32
 #define OPTION_GAP 10
+#define OPTION_ROW_GAP 6
 
-void render_phase_panel(const char *title, const char *subtitle,
-                        const char *const *options, int option_count,
-                        int selected, const Palette *p) {
+void render_phase_panel(const char *title,
+                        const char *subtitle, u32 subtitle_color,
+                        const char *const *options, int option_count, int cols,
+                        int selected,
+                        const char *note, u32 note_color,
+                        const Palette *p) {
     ui_draw_panel(PANEL_X, PANEL_Y, PANEL_W, PANEL_H,
                   p->panel_bg, p->panel_border, PANEL_RADIUS);
 
     if (title && *title) {
-        ui_draw_centered_text(PANEL_Y + 12, title, 14, p->text);
+        ui_draw_centered_text(PANEL_Y + 10, title, 14, p->text);
     }
     if (subtitle && *subtitle) {
-        ui_draw_centered_text(PANEL_Y + 38, subtitle, 10, p->text_dim);
+        ui_draw_centered_text(PANEL_Y + 36, subtitle, 10, subtitle_color);
     }
 
     if (option_count <= 0) return;
 
-    /* Buttons share the panel's width evenly. Four all-in-one-row is the widest
-       case the game asks for, and an even split keeps them the same size
-       whether there are two or four. */
+    if (cols < 1) cols = option_count;
+    if (cols > OPTION_COLS_MAX) cols = OPTION_COLS_MAX;
+
+    int rows = (option_count + cols - 1) / cols;
+    if (rows > OPTION_ROWS_MAX) rows = OPTION_ROWS_MAX;
+
+    /* Columns share the panel's width evenly and every row uses the same
+       column positions, so a button does not shift sideways because the row
+       below it happens to be short. That matters more than it sounds: index i
+       sits at row i / cols and column i % cols, which is exactly where
+       magnolia's MenuGrid believes the cursor is. */
     int inner = PANEL_W - 28;
-    int w = (inner - (option_count - 1) * OPTION_GAP) / option_count;
-    int y = PANEL_Y + PANEL_H - OPTION_H - 16;
+    int w = (inner - (cols - 1) * OPTION_GAP) / cols;
+
+    int last_row_y = PANEL_Y + PANEL_H - OPTION_H - 16;
+    int top_row_y  = last_row_y - (rows - 1) * (OPTION_H + OPTION_ROW_GAP);
+
+    /* The note lives where the second row of buttons would be, so it is only
+       drawn when there is no second row. Callers with a two-row grid pass NULL;
+       this is the belt to that braces. */
+    if (rows == 1 && note && *note) {
+        ui_draw_centered_text(PANEL_Y + 70, note, 10, note_color);
+    }
 
     for (int i = 0; i < option_count; i++) {
-        int x = PANEL_X + 14 + i * (w + OPTION_GAP);
+        int r = i / cols;
+        int c = i % cols;
+        if (r >= rows) break;
+
+        int x = PANEL_X + 14 + c * (w + OPTION_GAP);
+        int y = top_row_y + r * (OPTION_H + OPTION_ROW_GAP);
         int on = (i == selected);
 
         ui_draw_panel(x, y, w, OPTION_H,
                       on ? p->highlight : p->slot_bg,
                       on ? p->text : p->panel_border, 4);
-        ui_draw_text_centered_in(x, y, w, OPTION_H, options[i], 11,
-                                 on ? p->table_bg : p->text);
+
+        /* The highlighted button is dark ink on the palette's yellow, so it
+           takes the shadowless draw; the rest are light on dark, where the
+           shadow is doing its job. */
+        if (on) {
+            render_text_centered_in(x, y, w, OPTION_H, options[i], 11, p->table_bg);
+        } else {
+            ui_draw_text_centered_in(x, y, w, OPTION_H, options[i], 11, p->text);
+        }
     }
 }
 
-void render_result_panel(const DomeResult *r, const Palette *p) {
-    u32 tone = r->beat_dome ? p->win : p->loss;
+void render_result_panel(const DomeResult *r, float pulse_t, const Palette *p) {
+    /* A fold is neither a win nor a defeat on the merits, and colouring it like
+       a loss would say the dome out-played a hand nobody looked at. It gets the
+       panel's own border and the dimmer voice. */
+    u32 tone = r->folded ? p->text_dim : (r->beat_dome ? p->win : p->loss);
 
-    ui_draw_panel(PANEL_X, PANEL_Y, PANEL_W, PANEL_H, p->panel_bg, tone, PANEL_RADIUS);
+    /* The outline fades up as the panel arrives. It is the one part of the
+       result that changes colour with the outcome, so it is the part worth
+       drawing attention to -- and a fade does that without a flash, which on a
+       lava-red screen at CRT brightness is worth avoiding. */
+    if (pulse_t < 0.0f) pulse_t = 0.0f;
+    if (pulse_t > 1.0f) pulse_t = 1.0f;
+    u32 outline = render_fade(tone, 0.35f + 0.65f * ease_out_quad(pulse_t));
 
-    ui_draw_centered_text(PANEL_Y + 12,
-                          r->beat_dome ? "BEAT THE DOME" : "THE DOME WINS", 16, tone);
+    ui_draw_panel(PANEL_X, PANEL_Y, PANEL_W, PANEL_H, p->panel_bg, outline, PANEL_RADIUS);
+
+    const char *banner = r->folded    ? "YOU FOLDED"
+                       : r->beat_dome ? "BEAT THE DOME"
+                                      : "THE DOME WINS";
+    ui_draw_centered_text(PANEL_Y + 10, banner, 16, tone);
 
     char buf[64];
-    snprintf(buf, sizeof(buf), "%s -- %d POINTS vs %d",
-             hand_name(r->hand), r->points, r->threshold);
-    ui_draw_centered_text(PANEL_Y + 44, buf, 10, p->text);
+    if (r->folded) {
+        /* No hand line: none was evaluated, and printing HIGH CARD here would
+           be the game inventing a showdown that never happened. */
+        snprintf(buf, sizeof(buf), "THE BOARD MISSED YOU  -  %d NEEDED", r->threshold);
+    } else {
+        snprintf(buf, sizeof(buf), "%s -- %d POINTS vs %d",
+                 hand_name(r->hand), r->points, r->threshold);
+    }
+    ui_draw_centered_text(PANEL_Y + 38, buf, 10, p->text);
 
     if (r->beat_dome) {
         snprintf(buf, sizeof(buf), "+%d CHIPS", r->chips_won);
     } else {
         snprintf(buf, sizeof(buf), "-%d CHIPS", r->chips_lost);
     }
-    ui_draw_centered_text(PANEL_Y + 70, buf, 14, tone);
+    ui_draw_centered_text(PANEL_Y + 62, buf, 14, tone);
 
-    ui_draw_centered_text(PANEL_Y + 104, "A: CONTINUE", 10, p->text_dim);
+    /* Wrapped rather than centred on one line: the longest quip is 56
+       characters, which at a size anyone can read across a room is wider than
+       the panel. Wrapping puts the decision about where it breaks in one place
+       instead of in the length of each string. */
+    if (r->flavor && *r->flavor) {
+        ui_draw_text_wrapped(PANEL_X + 24, PANEL_Y + 86, PANEL_W - 48,
+                             r->flavor, 9, p->text_dim, 13);
+    }
+
+    ui_draw_centered_text(PANEL_Y + 118, "A: CONTINUE", 9, p->text_dim);
 }

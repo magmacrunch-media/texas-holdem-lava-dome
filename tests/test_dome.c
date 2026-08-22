@@ -90,7 +90,7 @@ static void test_payouts(void) {
     flush.points = hand_points(HAND_FLUSH);
     flush.valid = 1;
 
-    DomeResult r = dome_resolve(&d, &flush);
+    DomeResult r = dome_resolve(&d, &flush, NULL);
     check_int(r.chips_won, 252, "2.5x on 101 chips floors to 252, not 253");
 }
 
@@ -179,7 +179,7 @@ static void test_resolution(void) {
     dome_start_round(&win);
     dome_charge_ante(&win);              /* 490 */
     dome_place_bet(&win, 100);           /* 390 */
-    DomeResult w = dome_resolve(&win, &pair);
+    DomeResult w = dome_resolve(&win, &pair, NULL);
     check(w.beat_dome, "one pair beats round 1");
     check_int(w.chips_won, 100, "and pays even money");
     check_int(win.chips, 590, "so the stake comes back with the winnings");
@@ -191,7 +191,7 @@ static void test_resolution(void) {
     dome_start_round(&lose);
     dome_charge_ante(&lose);             /* 490 */
     dome_place_bet(&lose, 100);          /* 390 */
-    DomeResult l = dome_resolve(&lose, &junk);
+    DomeResult l = dome_resolve(&lose, &junk, NULL);
     check(!l.beat_dome, "high card cannot beat the dome");
     check_int(l.chips_lost, 100, "the stake is forfeit");
     check_int(lose.chips, 390, "and does not come back");
@@ -202,7 +202,7 @@ static void test_resolution(void) {
     deep.round = 5;                      /* threshold 30, above One Pair's 10 */
     deep.chips = 500;
     dome_place_bet(&deep, 50);
-    DomeResult dr = dome_resolve(&deep, &pair);
+    DomeResult dr = dome_resolve(&deep, &pair, NULL);
     check(!dr.beat_dome, "the pair that won round 1 loses round 5");
     check_int(dr.threshold, 30, "because the threshold moved, not the hand");
 }
@@ -237,11 +237,26 @@ static void test_cash_out_and_escape(void) {
     check(esc.escaped, "and it ended by choice");
     check_int(dome_score(&esc), 600, "the score is everything banked");
 
+    /* Banking a few chips moves the phase from CASHOUT to IDLE without ending
+       the decision, so escape has to survive the trip -- checking only CASHOUT
+       made the button disappear the moment anyone used the screen it is on. */
+    Dome after_banking;
+    dome_init(&after_banking);
+    after_banking.phase = DOME_PHASE_CASHOUT;
+    dome_cash_out(&after_banking, 100);
+    after_banking.phase = DOME_PHASE_IDLE;
+    check(dome_can_escape(&after_banking), "escape survives banking part of the stack");
+
     /* Escape is not offered mid-hand, nor with an empty stack. */
     Dome mid;
     dome_init(&mid);
     mid.phase = DOME_PHASE_BETTING;
     check(!dome_can_escape(&mid), "escape is not offered mid-hand");
+
+    Dome street;
+    dome_init(&street);
+    street.phase = DOME_PHASE_RIVER;
+    check(!dome_can_escape(&street), "nor part-way down the streets");
 
     Dome broke;
     dome_init(&broke);
@@ -291,7 +306,7 @@ static void test_session_is_survivable_but_not_forever(void) {
         if (!dome_start_round(&d)) break;
         if (!dome_charge_ante(&d)) break;
         dome_place_bet(&d, dome_min_bet(&d));
-        dome_resolve(&d, &pair);          /* wins early, loses later */
+        dome_resolve(&d, &pair, NULL);          /* wins early, loses later */
         rounds++;
     }
 
@@ -306,7 +321,7 @@ static void test_session_is_survivable_but_not_forever(void) {
     dome_start_round(&careful);
     dome_charge_ante(&careful);
     dome_place_bet(&careful, dome_min_bet(&careful));
-    dome_resolve(&careful, &pair);
+    dome_resolve(&careful, &pair, NULL);
     int before = careful.chips;
     dome_escape(&careful);
     check_int(dome_score(&careful), before, "walking away keeps exactly what was on the table");
@@ -399,6 +414,225 @@ static void test_digging_into_savings(void) {
     check_int(rt.chips, STARTING_CHIPS, "and end up exactly where they started");
 }
 
+static void test_folding(void) {
+    printf("dome: giving up the hand\n");
+
+    /* A fold forfeits the stake and nothing else. The stake left the stack when
+       it was placed, so the only thing folding does is decline to get it back --
+       there is no separate penalty to check for, and its absence is the check. */
+    Dome d;
+    dome_init(&d);
+    d.round = 3;
+    dome_charge_ante(&d);
+    int after_ante = d.chips;
+
+    dome_place_bet(&d, 100);
+    check_int(d.chips, after_ante - 100, "the stake is gone the moment it is bet");
+
+    DomeResult f = dome_fold(&d, NULL);
+    check(f.folded, "the result says the hand was folded");
+    check(!f.beat_dome, "a folded hand did not beat the dome");
+    check_int(f.chips_lost, 100, "and it cost exactly the stake");
+    check_int(f.chips_won, 0, "with nothing won");
+    check_int(d.chips, after_ante - 100, "the stack does not move again on the fold");
+    check_int(d.current_bet, 0, "and the pot is cleared for the next round");
+    check_int((int)d.phase, (int)DOME_PHASE_CASHOUT, "folding lands on the cash-out");
+
+    /* The hand is never read, so a fold must settle identically whatever was
+       held. Folding a board that would have won and still losing the stake is
+       the proof -- and it is the reason dome_fold() takes no hand at all. */
+    Dome royal;
+    dome_init(&royal);
+    royal.round = 1;
+    dome_charge_ante(&royal);
+    dome_place_bet(&royal, 50);
+    DomeResult rf = dome_fold(&royal, NULL);
+    check_int(rf.chips_lost, 50, "folding a winning board still costs the stake");
+    check_int(rf.points, 0, "and reports no points, because none were counted");
+
+    /* Folding an all-in empties the stack exactly as losing it would, so the
+       same end-of-session test has to run on this path. */
+    Dome allin;
+    dome_init(&allin);
+    allin.round = 1;
+    dome_charge_ante(&allin);
+    dome_place_bet(&allin, dome_max_bet(&allin));
+    check_int(allin.chips, 0, "all-in leaves nothing on the table");
+
+    DomeResult af = dome_fold(&allin, NULL);
+    check(af.bust, "folding all-in busts the stack");
+    check(allin.session_over, "and with an empty bank that is the session");
+    check(!allin.escaped, "which is a bust, not an escape");
+
+    /* The same fold with something banked is not the end: the savings guard
+       exists precisely so this player still has a way back onto the table. */
+    Dome banked;
+    dome_init(&banked);
+    banked.round = 1;
+    dome_charge_ante(&banked);
+    dome_cash_out(&banked, 300);
+    dome_place_bet(&banked, dome_max_bet(&banked));
+    DomeResult bf = dome_fold(&banked, NULL);
+    check(bf.bust, "the stack is still empty");
+    check(!banked.session_over, "but a filled bank means the session goes on");
+    check(dome_must_dig_into_savings(&banked), "and the way back out is offered");
+}
+
+static void test_raising_accumulates(void) {
+    printf("dome: a stake built across the streets\n");
+
+    /* dome_place_bet() is also the raise -- it adds rather than replaces. That
+       is what makes the payout multiplier apply to everything committed over
+       the whole hand, which is the web build's behaviour and is worth pinning
+       down: the alternative, paying out only on the last raise, would look
+       almost right and quietly gut the game's winnings. */
+    Dome d;
+    dome_init(&d);
+    d.round = 1;
+    dome_charge_ante(&d);
+
+    dome_place_bet(&d, 40);     /* pre-flop */
+    dome_place_bet(&d, 30);     /* raise on the flop */
+    dome_place_bet(&d, 30);     /* raise on the turn */
+    check_int(d.current_bet, 100, "four streets of betting are one stake");
+
+    HandResult flush;
+    memset(&flush, 0, sizeof(flush));
+    flush.valid  = 1;
+    flush.rank   = HAND_FLUSH;
+    flush.points = hand_points(HAND_FLUSH);
+
+    DomeResult r = dome_resolve(&d, &flush, NULL);
+    check_int(r.chips_won, 250, "a 2.5x flush pays on the whole 100, not the last raise");
+
+    /* And raising is only offered while there is something to raise with. */
+    Dome spent;
+    dome_init(&spent);
+    spent.round = 1;
+    dome_charge_ante(&spent);
+    check(dome_can_raise(&spent), "a stack with chips in it can raise");
+    dome_place_bet(&spent, dome_max_bet(&spent));
+    check(!dome_can_raise(&spent), "an all-in player has nothing left to raise");
+}
+
+static void test_ante_lookahead(void) {
+    printf("dome: seeing the next ante coming\n");
+
+    Dome d;
+    dome_init(&d);
+    d.round = 2;
+    check_int(dome_next_ante(&d), 20, "round 2 looks ahead to round 3's ante");
+    d.round = 15;
+    check_int(dome_next_ante(&d), 275, "and the lookahead escalates with the schedule");
+
+    /* The warning is about whether the ante can still be paid, not whether it
+       is rising -- the depth bar already says that. */
+    Dome healthy;
+    dome_init(&healthy);
+    healthy.round = 1;
+    check(!dome_ante_danger(&healthy), "500 chips against a 10 ante is not a warning");
+
+    Dome short_stack;
+    dome_init(&short_stack);
+    short_stack.round = 5;
+    short_stack.chips = 20;
+    check(dome_ante_danger(&short_stack), "20 chips against a 30 ante is");
+
+    /* Exactly enough still warns: paying it in full arrives at the betting
+       screen with nothing, which is the same dead end as being short. */
+    Dome exact;
+    dome_init(&exact);
+    exact.round = 5;
+    exact.chips = dome_next_ante(&exact);
+    check(dome_ante_danger(&exact), "and so is exactly enough to cover it");
+
+    /* A finished session has nothing left to warn about. */
+    Dome done;
+    dome_init(&done);
+    done.round = 5;
+    done.chips = 1;
+    done.session_over = 1;
+    check(!dome_ante_danger(&done), "a session that is over warns about nothing");
+}
+
+static void test_risk_levels(void) {
+    printf("dome: how exposed a bet leaves you\n");
+
+    /* The web build's thresholds are 0.40 and 0.75 of the stack. Checked on
+       both sides of each line, because a >= that should have been a > is
+       exactly the slip that gives a badge which is wrong only at the boundary,
+       where it is also the only place anyone is reading it. */
+    Dome d;
+    dome_init(&d);
+    d.chips = 100;
+
+    check_int((int)dome_risk_level(&d, 10),  (int)RISK_LOW,    "10 of 100 is low");
+    check_int((int)dome_risk_level(&d, 39),  (int)RISK_LOW,    "39 is still low");
+    check_int((int)dome_risk_level(&d, 40),  (int)RISK_MEDIUM, "40 is medium");
+    check_int((int)dome_risk_level(&d, 74),  (int)RISK_MEDIUM, "74 is still medium");
+    check_int((int)dome_risk_level(&d, 75),  (int)RISK_HIGH,   "75 is high");
+    check_int((int)dome_risk_level(&d, 99),  (int)RISK_HIGH,   "99 is still high");
+    check_int((int)dome_risk_level(&d, 100), (int)RISK_ALL_IN, "the whole stack is all in");
+
+    /* Every level has to say something. A badge that renders blank is worse
+       than no badge, because it reads as a hole in the screen. */
+    check_str(dome_risk_label(RISK_LOW),    "LOW RISK",    "low says so");
+    check_str(dome_risk_label(RISK_MEDIUM), "MEDIUM RISK", "medium says so");
+    check_str(dome_risk_label(RISK_HIGH),   "HIGH RISK",   "high says so");
+    check_str(dome_risk_label(RISK_ALL_IN), "ALL IN",      "all-in says so");
+
+    /* An empty stack cannot be divided by. */
+    Dome broke;
+    dome_init(&broke);
+    broke.chips = 0;
+    check_int((int)dome_risk_level(&broke, 0), (int)RISK_ALL_IN,
+              "an empty stack is all in by definition, not a divide by zero");
+}
+
+static void test_flavor_text(void) {
+    printf("dome: what the dome has to say\n");
+
+    /* Every line has to be a real line. A null or empty quip would draw as a
+       gap in the result panel and read as a missing string, not a choice.
+       Looped so that every entry of every table is reached. */
+    Rng rng;
+    rng_seed(&rng, 1);
+    int empty = 0;
+    for (int i = 0; i < 200; i++) {
+        const char *w = dome_flavor_win(&rng);
+        const char *b = dome_flavor_bust(&rng);
+        const char *e = dome_flavor_escape(&rng);
+        if (!w || !*w || !b || !*b || !e || !*e) empty++;
+    }
+    check_int(empty, 0, "every quip drawn is a real line");
+
+    /* Without a generator the tables still answer, which is what lets the rest
+       of this file settle hands without seeding one. */
+    check_str(dome_flavor_win(NULL), "I keep my cards close to my heart.",
+              "no generator picks the first line rather than nothing");
+
+    /* Settling a hand attaches one, and a lost hand borrows the bust table --
+       the same reuse the web build makes. */
+    Dome d;
+    dome_init(&d);
+    d.round = 20;                       /* threshold 105: a pair cannot reach it */
+    dome_charge_ante(&d);
+    dome_place_bet(&d, 50);
+
+    HandResult pair;
+    memset(&pair, 0, sizeof(pair));
+    pair.valid  = 1;
+    pair.rank   = HAND_ONE_PAIR;
+    pair.points = hand_points(HAND_ONE_PAIR);
+
+    DomeResult lost = dome_resolve(&d, &pair, &rng);
+    check(!lost.beat_dome, "the pair missed the round 20 threshold");
+    check(lost.flavor && *lost.flavor, "and the result carries a quip anyway");
+
+    DomeResult folded = dome_fold(&d, &rng);
+    check(folded.flavor && *folded.flavor, "so does a fold");
+}
+
 int main(void) {
     test_ante_schedule();
     test_threshold_curve();
@@ -409,5 +643,10 @@ int main(void) {
     test_cash_out_and_escape();
     test_digging_into_savings();
     test_session_is_survivable_but_not_forever();
+    test_folding();
+    test_raising_accumulates();
+    test_ante_lookahead();
+    test_risk_levels();
+    test_flavor_text();
     return report();
 }

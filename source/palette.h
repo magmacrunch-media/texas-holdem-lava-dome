@@ -58,6 +58,15 @@ typedef struct {
 
     u32 win;
     u32 loss;
+
+    /* The bet-risk badge. Only two fields because the other two levels already
+       have a colour that means the same thing: medium risk is the accent the
+       dome itself is drawn in, and all-in is simply `loss` said early.
+
+       Both values are LAVA_COLORS entries that nothing else had claimed yet, so
+       the badge introduces no colour the web build does not have. */
+    u32 risk_low;
+    u32 risk_high;
 } Palette;
 
 /* The one palette. Returned by pointer to match how the renderer threads it

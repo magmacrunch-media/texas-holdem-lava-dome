@@ -30,6 +30,19 @@ right — which is worse than one that plainly does not:
 - **High Card pays nothing.** Its payout multiplier is 0, so a high card cannot
   beat the dome at any threshold.
 
+Two further places this port and the web build differ, both on purpose:
+
+- **A raise buys the next card.** `js/ui.js` calls `betting.raise()` and
+  `dealer.advanceStreet()` on the same click, so a hand holds four betting
+  decisions -- the pre-flop bet and one at each street -- and never more. This
+  port does the same. Letting a raise stay on its street would be an open
+  betting loop the arcade version does not have, which is a different game and
+  a longer one.
+- **No burn cards.** The web build discards one card before the flop, the turn
+  and the river. Off a freshly shuffled deck that cannot move any odds, so it is
+  not reproduced; `dealer.h` says so at the point where it would go. It would
+  matter only for replaying a seed against the browser, which nothing does.
+
 Unlike the George Boole port, the web version here has **no test suite** to carry
 over, so the rules cannot be checked by agreeing with a reference — something
 else has to stand in for one.
@@ -95,6 +108,12 @@ shapes. A diamond is therefore one polygon, while hearts, spades and clubs are
 composed from circles plus a triangle. Colour carries the suit redundantly, so a
 pip that softens at distance still reads red or black.
 
+Cards slide the last few pixels into their slots and fade up rather than
+scaling into place. Scaling would mean drawing a rank at fractional sizes on
+every frame of the animation, and Press Start 2P is a pixel font -- that is the
+same smudge the drop-shadow workaround below exists to avoid, arriving by
+another route. Sliding leaves every glyph at the one size it was drawn for.
+
 **One magnolia limitation found here.** Every text helper in `ui_utils` draws a
 hardcoded black drop shadow two pixels down and right. That suits the games it
 was written for, which put light text on dark backgrounds — and it wrecks a red
@@ -148,6 +167,15 @@ covered by a property instead: the best hand out of seven can never rank below
 any five of those seven, checked over 20,000 seeded deals against all 21 subsets
 of each.
 
+`make test` builds three binaries, one per file, each naming what it links. The
+third is `test-anim`, and it is there because both of the things `source/anim.c`
+does fail invisibly. A counter that rests half a chip short of its target shows
+a stack the player does not have, and a reveal that never reaches 1.0 leaves
+input gated forever -- a game that draws every frame and takes no buttons.
+Neither shows up in a screenshot. Both are one loop away from certain here,
+which is why the module takes `dt` as an argument instead of reading magnolia's
+clock: a module that reads the clock can only be checked on a television.
+
 ## Testing without a controller
 
 Reaching gameplay by hand needs button presses into an emulator window. Instead:
@@ -163,3 +191,21 @@ False, which makes a working trace look like a dead one.
 
 Dolphin also reuses an already-running instance, so kill it between runs or you
 will read the previous run's log and debug a binary that is not running.
+
+An autoplay build does two things a normal one does not, both so that it can
+keep playing rather than stopping somewhere that looks like progress:
+
+- **It skips the initials editor.** That screen and the leaderboard behind it
+  are driven by magnolia's shell, which reads the real Wiimote -- there is no
+  press to synthesise into them. Every soak run scores, and every score is a
+  high score on a card `make dolphin` has just cleared, so without the skip the
+  soak plays exactly one session and then sits on the initials screen forever
+  with a log that looks perfectly healthy. Runs are filed as `AAA`, which also
+  puts `scoring_add_entry()` and the save on the exercised path.
+- **It picks buttons at random.** Stepping the cursor by the press number was
+  the obvious thing and is quietly useless: the press number advances in
+  lockstep with the phases, so the same index lands on the same button every
+  session. With a four-button street menu that index was FOLD -- six hands out
+  of six folded, no showdown ever reached, and a log full of activity. Random
+  costs a seeded session its reproducibility, and only in this build, which is
+  a fair price for covering more than one path.
