@@ -86,7 +86,7 @@ $(filter-out assets.o,$(OFILES)): assets.h
 else
 #---------------------------------------------------------------------------------
 
-.PHONY: $(BUILD) clean all deploy dolphin test $(HOST_TESTS)
+.PHONY: $(BUILD) clean all deploy dolphin card wii test $(HOST_TESTS)
 
 # Stated explicitly: the host-test rule below would otherwise be the first
 # target in the file, and a bare `make` would run the tests instead of
@@ -113,7 +113,7 @@ HOSTCFLAGS := -Wall -Wextra -O2 -I source -I tests
 # $(BUILD) is the target that cross-compiles the game, not merely a directory,
 # so depending on it would drag devkitPPC into `make test` and undo the one
 # property these tests exist for.
-test: test-hand-eval test-dome test-anim
+test: $(HOST_TESTS)
 
 test-hand-eval:
 	@mkdir -p $(BUILD)
@@ -171,6 +171,56 @@ dolphin: deploy
 	@echo "NOTE: this clears the app directory, which deletes saved scores and"
 	@echo "settings with it. Expected on a dev loop; do not mistake it for the"
 	@echo "game failing to save."
+
+# --- onto real hardware -------------------------------------------------------
+#
+#   make card SD=/mnt/e   install onto a mounted SD card (the permanent route)
+#   make wii              send this build to a waiting console over the network
+#
+# `card` takes a mount point because an SD card is removable and its drive
+# letter moves. In WSL, a card showing as E: is /mnt/e.
+#
+# Unlike `dolphin`, this MERGES rather than clearing. On the emulator a wiped
+# app directory is a clean slate; on a card it is somebody's high scores. Only
+# boot.dol and meta.xml are overwritten, so scores.json and settings.json
+# survive an update.
+card: deploy
+	@if [ -z "$(SD)" ]; then \
+	    echo "Set SD to the card's mount point:"; \
+	    echo "    make card SD=/mnt/e"; \
+	    echo ""; \
+	    echo "Or copy $(SDROOT)/ to <card>/apps/$(TARGET)/ yourself."; \
+	    exit 1; \
+	fi
+	@if [ ! -d "$(SD)" ]; then \
+	    echo "No such path: $(SD)"; \
+	    echo "Is the card mounted? In WSL a card at E: is /mnt/e."; \
+	    exit 1; \
+	fi
+	@mkdir -p "$(SD)/apps/$(TARGET)"
+	@cp $(SDROOT)/boot.dol "$(SD)/apps/$(TARGET)/boot.dol"
+	@cp $(SDROOT)/meta.xml "$(SD)/apps/$(TARGET)/meta.xml"
+	@echo "Installed to $(SD)/apps/$(TARGET)/"
+	@echo "Saves in that directory were left alone."
+	@echo "Eject the card; it appears in the Homebrew Channel as the meta.xml name."
+
+# Sends the .dol straight to a console and runs it, without installing anything.
+# The fast loop for real hardware: no card, no ejecting, a couple of seconds.
+#
+# The Wii has to be sitting on the Homebrew Channel's netloader screen -- open
+# the channel and press Home -- and it prints its own IP address there.
+wii: $(BUILD)
+	@if [ -z "$(WIILOAD)" ]; then \
+	    echo "wiiload needs the console's address:"; \
+	    echo "    make wii WIILOAD=tcp:192.168.1.50"; \
+	    echo ""; \
+	    echo "Open the Homebrew Channel, press Home for the netloader screen,"; \
+	    echo "and use the IP it shows. Export WIILOAD to avoid retyping it."; \
+	    exit 1; \
+	fi
+	@WIILOAD=$(WIILOAD) $(DEVKITPRO)/tools/bin/wiiload $(BUILD)/$(TARGET).dol
+	@echo "Sent $(BUILD)/$(TARGET).dol to $(WIILOAD) -- it runs immediately."
+	@echo "Nothing was installed; use 'make card' for that."
 
 #---------------------------------------------------------------------------------
 endif

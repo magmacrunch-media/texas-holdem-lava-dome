@@ -75,6 +75,37 @@ make dolphin    # push that to the folder Dolphin reads as its SD card
 and settings are deleted on every deploy**. That is right for a dev loop and
 wrong to mistake for the game failing to save.
 
+## Onto a real Wii
+
+Two routes, and they do different jobs.
+
+```bash
+make card SD=/mnt/e             # install onto an SD card (permanent)
+make wii  WIILOAD=tcp:<wii-ip>  # send this build to a running console (temporary)
+```
+
+**`make card`** is the one that installs the game. It needs the card's mount
+point because a removable drive's letter moves — a card showing as `E:` in
+Windows is `/mnt/e` in WSL. Eject it, put it in the console, and the game appears
+in the Homebrew Channel under the name in `meta.xml`.
+
+Unlike `make dolphin`, this **merges**: only `boot.dol` and `meta.xml` are
+overwritten, so `scores.json` and `settings.json` on the card survive an update.
+Wiping is right for a dev loop against an emulator and wrong when it is somebody's
+high scores.
+
+**`make wii`** sends the `.dol` over the network and runs it immediately, without
+installing anything. It is the fast loop for real hardware — no card, no ejecting,
+a couple of seconds. Open the Homebrew Channel, press Home for the netloader
+screen, and use the IP address it displays:
+
+```bash
+export WIILOAD=tcp:192.168.1.50   # once per shell, then just `make wii`
+```
+
+The console has to be sitting on that netloader screen when you send. Nothing is
+written to the card, so the game is gone when you quit it.
+
 ## Assets
 
 Sprites and audio are linked into the binary, not read from the card: assets on a

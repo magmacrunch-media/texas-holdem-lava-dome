@@ -1,0 +1,30 @@
+# The host tests need nothing but a C compiler, so they run on a GitHub-hosted
+# runner rather than the dev box. These are the tests that must still run when
+# that machine is off — tying them to it would undo the point of having them.
+#
+# One checkout: this game's tests link only its own sources, so the engine is
+# not needed here the way it is in Moonlight Drift's workflow.
+#
+# The devkitPPC build is not included, matching the other repos: it needs the
+# self-hosted runner, and that job stays out until its label is confirmed.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  host-tests:
+    name: host tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # The hand evaluator classifies all 2,598,960 five-card hands and checks
+      # the ten totals against the published frequencies, so this job is doing
+      # real work rather than a smoke test — and still finishes in seconds.
+      - name: make test
+        run: make test
