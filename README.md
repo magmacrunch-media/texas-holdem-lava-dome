@@ -1,6 +1,6 @@
 # Texas Hold'Em Lava Dome
 
-A Wii homebrew port of the MagmaCrunch arcade game, built on
+A Wii homebrew port of the magmacrunch arcade game, built on
 [magnolia](../magnolia).
 
 Solo Texas Hold'Em with no opponent. The dome charges an escalating ante each
@@ -248,7 +248,7 @@ that proves it, the dome's ante and threshold model, and the procedural card
 rendering are all reusable, and worth reusing.
 
 The game's name, the lava palette and visual design, the depth labels, and any
-art or audio added later are © 2026 MagmaCrunch Media, all rights reserved, and
+art or audio added later are © 2026 magmacrunch media, all rights reserved, and
 are **not** covered by that licence. Nothing of that kind ships today — the cards
 are drawn, not loaded. See [NOTICE](NOTICE) for the exact boundary and the
 third-party components.

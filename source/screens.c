@@ -173,7 +173,7 @@ void screens_draw_credits(const Palette *p) {
 
     ui_draw_text_shadow(BODY_X, y, "PUBLISHER", 11, p->highlight);
     y += 26;
-    ui_draw_text_shadow(BODY_X + 10, y, "MagmaCrunch Media", 11, p->text);
+    ui_draw_text_shadow(BODY_X + 10, y, "magmacrunch media", 11, p->text);
 
     ui_draw_centered_text(444, "B: BACK", 10, p->text_dim);
 }

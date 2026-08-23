@@ -1,5 +1,5 @@
 Texas Hold'Em Lava Dome -- Wii port
-Copyright 2026 MagmaCrunch Media
+Copyright 2026 magmacrunch media
 
 
 WHAT THE APACHE LICENSE COVERS
@@ -19,11 +19,11 @@ This game currently ships no art or audio at all -- the cards, pips and table
 are drawn procedurally, so sprites/ and audio/ hold only placeholder READMEs.
 Nothing is being reserved that is not here.
 
-What is reserved: the game's name, the Texas Hold'Em Lava Dome and MagmaCrunch
+What is reserved: the game's name, the Texas Hold'Em Lava Dome and magmacrunch
 names and marks, the lava palette and visual design, the depth labels drawn from
 the band's song titles, and any art or audio added to sprites/ or audio/ later.
 
-Those are Copyright 2026 MagmaCrunch Media, all rights reserved. The Apache
+Those are Copyright 2026 magmacrunch media, all rights reserved. The Apache
 License does not grant rights to them, and section 6 of that licence does not
 grant trademark rights in any case.
 
