@@ -1,5 +1,5 @@
 #---------------------------------------------------------------------------------
-# lava-dome -- a magnolia game
+# texas-holdem-lava-dome -- a magnolia game
 #---------------------------------------------------------------------------------
 .SUFFIXES:
 .SECONDARY:
@@ -17,7 +17,7 @@ include $(DEVKITPPC)/wii_rules
 endif
 
 #---------------------------------------------------------------------------------
-TARGET      := lava-dome
+TARGET      := texas-holdem-lava-dome
 BUILD       := build
 SOURCES     := source ../magnolia/source ../magnolia/font
 DATA        :=

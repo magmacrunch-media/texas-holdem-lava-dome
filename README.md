@@ -50,7 +50,7 @@ else has to stand in for one.
 ## Layout
 
 ```
-lava-dome-wii/
+texas-holdem-lava-dome-wii/
 ├── Makefile
 ├── meta.xml          Homebrew Channel entry
 ├── source/           game code
@@ -66,8 +66,8 @@ export DEVKITPRO=/opt/devkitpro
 export DEVKITPPC=/opt/devkitpro/devkitPPC
 export PATH=$DEVKITPPC/bin:$PATH
 
-make            # build build/lava-dome.dol
-make deploy     # stage sdcard/apps/lava-dome/
+make            # build build/texas-holdem-lava-dome.dol
+make deploy     # stage sdcard/apps/texas-holdem-lava-dome/
 make dolphin    # push that to the folder Dolphin reads as its SD card
 ```
 

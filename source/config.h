@@ -3,7 +3,7 @@
 
 /* Homebrew Channel app directory. The engine derives sd:/apps/<APP_NAME>/... from
    this, so asset and save paths are not repeated around the codebase. */
-#define APP_NAME            "lava-dome"
+#define APP_NAME            "texas-holdem-lava-dome"
 
 #define HIGH_SCORE_COUNT    10
 
