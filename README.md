@@ -240,3 +240,15 @@ keep playing rather than stopping somewhere that looks like progress:
   of six folded, no showdown ever reached, and a log full of activity. Random
   costs a seeded session its reproducibility, and only in this build, which is
   a fair price for covering more than one path.
+
+## License
+
+Code under the [Apache License 2.0](LICENSE) — the hand evaluator and the sweep
+that proves it, the dome's ante and threshold model, and the procedural card
+rendering are all reusable, and worth reusing.
+
+The game's name, the lava palette and visual design, the depth labels, and any
+art or audio added later are © 2026 MagmaCrunch Media, all rights reserved, and
+are **not** covered by that licence. Nothing of that kind ships today — the cards
+are drawn, not loaded. See [NOTICE](NOTICE) for the exact boundary and the
+third-party components.
