@@ -6,7 +6,7 @@
 #---------------------------------------------------------------------------------
 # The host tests deliberately need no cross-compiler: requiring devkitPPC to run
 # them would put them out of reach on the machine where they are most useful.
-HOST_TESTS := test-hand-eval test-dome test-anim
+HOST_TESTS := test-hand-eval test-dome test-anim test-dealer
 
 ifeq ($(filter test $(HOST_TESTS),$(MAKECMDGOALS)),)
 ifeq ($(strip $(DEVKITPPC)),)
@@ -131,6 +131,12 @@ test-anim:
 	@mkdir -p $(BUILD)
 	@$(HOSTCC) $(HOSTCFLAGS) -o $(BUILD)/$@ \
 	    tests/test_anim.c source/anim.c
+	@$(BUILD)/$@
+
+test-dealer:
+	@mkdir -p $(BUILD)
+	@$(HOSTCC) $(HOSTCFLAGS) -o $(BUILD)/$@ \
+	    tests/test_dealer.c source/dealer.c source/cards.c
 	@$(BUILD)/$@
 
 all: $(BUILD)
