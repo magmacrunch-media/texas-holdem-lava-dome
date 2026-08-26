@@ -1,6 +1,6 @@
 # Texas Hold'Em Lava Dome — agent brief
 
-One game, two versions, one repo:
+One game, three versions, one repo:
 
 - `web/` — browser version (adenosine engine, plain JS). Source of truth for
   rules and tuning (`js/config.js`, `js/dome.js`). Deployed by the website
@@ -12,5 +12,21 @@ One game, two versions, one repo:
   restamping, raise-buys-a-card). Expects magnolia checked out beside this
   repo.
 
-A rules change is not done until both versions have it (or the commit says
+- `tui/` — terminal version (texastoast engine, Python + its `[tui]` backend).
+  `python -m lavadome`. Has its own `README.md`, which records the deliberate
+  differences it shares with the Wii port.
+
+A rules change is not done until all three versions have it (or the commit says
 why one is skipped).
+
+## Checking the rules
+
+The web build has no test suite, so unlike George Boole there is no assertion
+table to agree with. `tui/` supplies one for the part that matters most:
+`tui/tools/js_oracle.mjs` loads the shipped `arcade/shared/adenosine-cards.js`
+in node, and `tui/tests/test_handeval.py` runs the Python evaluator against it
+over thousands of random hands, comparing name, rank, points, tiebreakers and
+description. Same method `web/js/config.js` records using when AdCards replaced
+this game's original evaluator.
+
+If you change hand evaluation anywhere, run that.
