@@ -1,0 +1,872 @@
+/* game-layout.css - Texas Hold'Em Lava Dome game area */
+
+/* ── Header ────────────────────────────────────────────────── */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-bottom: 12px;
+    border-bottom: 4px solid var(--black);
+    box-shadow: 0 4px 0 var(--orange);
+}
+
+h1 {
+    font-family: var(--font-pixel);
+    color: var(--yellow);
+    font-size: clamp(10px, 2vw, 16px);
+    letter-spacing: 1px;
+    text-shadow:
+        2px 2px 0 var(--lava-bright),
+        4px 4px 0 var(--deep-red);
+    line-height: 1.4;
+}
+
+/* ── Stats bar ─────────────────────────────────────────────── */
+.stats {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.score-container {
+    background-color: var(--black);
+    padding: 8px 12px;
+    text-align: center;
+    min-width: 72px;
+
+    border-top:    2px solid var(--orange);
+    border-left:   2px solid var(--orange);
+    border-bottom: 2px solid var(--lava-dark);
+    border-right:  2px solid var(--lava-dark);
+    box-shadow: 0 0 0 2px var(--black);
+}
+
+.score-label {
+    font-family: var(--font-pixel);
+    color: var(--orange-glow);
+    font-size: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+}
+
+.score {
+    font-family: var(--font-pixel);
+    color: var(--yellow);
+    font-size: 16px;
+    text-shadow: 0 0 8px rgba(255, 200, 0, 0.7);
+}
+
+/* ── Controls row ──────────────────────────────────────────── */
+.controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.controls button {
+    flex: 1;
+    font-size: 8px;
+    padding: 8px 10px;
+}
+
+/* ── Game area wrapper ─────────────────────────────────────── */
+.game-area {
+    background-color: var(--grey-dark);
+    border-top:    3px solid var(--orange);
+    border-left:   3px solid var(--orange);
+    border-bottom: 3px solid var(--deep-red);
+    border-right:  3px solid var(--deep-red);
+    box-shadow: 0 0 0 2px var(--black), inset 0 0 30px rgba(0,0,0,0.5);
+    padding: 16px;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+.game-area-left {
+    flex: 1;
+    min-width: 0;
+}
+
+.chip-display-area {
+    flex-shrink: 0;
+    width: 220px;
+}
+
+.chip-display-area .section-label {
+    margin-bottom: 6px;
+}
+
+/* ── Top section (current card + total score) ──────────────── */
+.top-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 16px;
+}
+
+.deck-area {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.current-card-label {
+    font-family: var(--font-pixel);
+    color: var(--orange-glow);
+    font-size: 7px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    line-height: 2;
+}
+
+.score-display {
+    text-align: right;
+}
+
+.score-display h3 {
+    font-family: var(--font-pixel);
+    color: var(--orange-glow);
+    font-size: 7px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+.score-display .total-score {
+    font-family: var(--font-pixel);
+    color: var(--yellow);
+    font-size: 28px;
+    text-shadow:
+        2px 2px 0 var(--lava-bright),
+        0 0 16px rgba(255, 200, 0, 0.6);
+}
+
+/* ── 5×5 Poker Grid ────────────────────────────────────────── */
+.poker-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 100px);
+    grid-template-rows: repeat(5, 140px);
+    gap: 6px;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+
+.grid-cell {
+    width: 100px;
+    height: 140px;
+    background-color: var(--black);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+    transition: background-color 0.1s;
+
+    /* Inset pixel border for empty cell */
+    border-top:    2px solid var(--deep-red);
+    border-left:   2px solid var(--deep-red);
+    border-bottom: 2px solid var(--lava-dark);
+    border-right:  2px solid var(--lava-dark);
+    box-shadow: inset 0 0 0 1px rgba(255, 80, 0, 0.1);
+}
+
+/* Corner pip marks like a real card table */
+.grid-cell::before {
+    content: '·';
+    position: absolute;
+    font-size: 18px;
+    color: rgba(255, 80, 0, 0.15);
+    top: 2px;
+    left: 4px;
+    font-family: monospace;
+}
+
+.grid-cell:hover:not(.occupied) {
+    background-color: var(--grey-mid);
+    border-top:    2px solid var(--orange-hot);
+    border-left:   2px solid var(--orange-hot);
+    border-bottom: 2px solid var(--lava-mid);
+    border-right:  2px solid var(--lava-mid);
+    box-shadow:
+        inset 0 0 0 1px rgba(255, 120, 0, 0.3),
+        0 0 8px rgba(255, 80, 0, 0.3);
+}
+
+.grid-cell.occupied {
+    cursor: default;
+    border-color: transparent;
+    box-shadow: none;
+    background-color: transparent;
+}
+
+.grid-cell.occupied::before {
+    display: none;
+}
+
+.grid-cell .card {
+    position: absolute;
+}
+
+/* ── Hand score panels ─────────────────────────────────────── */
+.hand-scores {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.hand-scores-column h4 {
+    font-family: var(--font-pixel);
+    color: var(--orange-glow);
+    font-size: 7px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid var(--deep-red);
+}
+
+.hand-score-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 8px;
+    background-color: var(--black);
+    margin-bottom: 4px;
+
+    border-top:    1px solid var(--lava-dark);
+    border-left:   1px solid var(--lava-dark);
+    border-bottom: 1px solid var(--deep-red);
+    border-right:  1px solid var(--deep-red);
+}
+
+.hand-score-item .hand-name {
+    font-family: var(--font-pixel);
+    color: var(--yellow-pale);
+    font-size: 6px;
+    letter-spacing: 0.5px;
+}
+
+.hand-score-item .hand-value {
+    font-family: var(--font-pixel);
+    color: var(--orange-hot);
+    font-size: 7px;
+    font-weight: normal;
+}
+
+.hand-score-item.best-hand {
+    background-color: var(--deep-red);
+    border-top:    1px solid var(--yellow);
+    border-left:   1px solid var(--yellow);
+    border-bottom: 1px solid var(--lava-mid);
+    border-right:  1px solid var(--lava-mid);
+    box-shadow: 0 0 6px rgba(255, 200, 0, 0.3);
+}
+
+.hand-score-item.best-hand .hand-name {
+    color: var(--yellow);
+}
+
+.hand-score-item.best-hand .hand-value {
+    color: var(--yellow);
+    text-shadow: 0 0 6px rgba(255, 200, 0, 0.8);
+}
+
+/* ── Card spot (current card holder) ──────────────────────── */
+.card-spot {
+    width: 90px;
+    height: 126px;
+    background-color: var(--black);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    flex-shrink: 0;
+
+    border-top:    2px solid var(--orange);
+    border-left:   2px solid var(--orange);
+    border-bottom: 2px solid var(--lava-dark);
+    border-right:  2px solid var(--lava-dark);
+    box-shadow: 0 0 0 2px var(--black), 0 0 12px rgba(255, 80, 0, 0.3);
+}
+
+.card-spot > .card {
+    flex-shrink: 0;
+    width: 90px;
+    height: 126px;
+    position: absolute;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   TEXAS HOLD'EM LAVA DOME — New game UI elements
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Depth bar ──────────────────────────────────────────────── */
+.depth-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 12px;
+    background-color: var(--black);
+    border-top:    2px solid var(--orange);
+    border-bottom: 2px solid var(--deep-red);
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.depth-label {
+    font-family: var(--font-pixel);
+    font-size: 7px;
+    color: var(--yellow);
+    letter-spacing: 2px;
+}
+
+.ante-warning {
+    font-family: var(--font-pixel);
+    font-size: 6px;
+    color: var(--yellow);
+    animation: blink 4s step-end infinite;
+    margin-left: auto;
+}
+
+/* ── Card sections ──────────────────────────────────────────── */
+.community-section,
+.hole-section {
+    margin-bottom: 14px;
+}
+
+.section-label {
+    font-family: var(--font-pixel);
+    font-size: 6px;
+    color: var(--orange-glow);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.community-cards,
+.hole-cards {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.chip-display-area .hole-cards {
+    justify-content: center;
+}
+
+/* Card placeholder slots */
+.card-placeholder {
+    width: 100px;
+    height: 140px;
+    background-color: var(--black);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: var(--font-pixel);
+    font-size: 10px;
+    color: var(--lava-dark);
+    border-top:    2px solid var(--deep-red);
+    border-left:   2px solid var(--deep-red);
+    border-bottom: 2px solid var(--black);
+    border-right:  2px solid var(--black);
+    flex-shrink: 0;
+}
+
+/* ── Hand status bar ────────────────────────────────────────── */
+.hand-status-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    background-color: var(--black);
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    border-left: 3px solid var(--lava-dark);
+}
+
+.hand-status-item {
+    font-family: var(--font-pixel);
+    font-size: 7px;
+    color: var(--yellow-pale);
+}
+
+.hand-status-item strong {
+    color: var(--yellow);
+}
+
+.hand-status-sep {
+    color: var(--lava-mid);
+    font-family: var(--font-pixel);
+    font-size: 7px;
+}
+
+.hand-status-badge {
+    font-family: var(--font-pixel);
+    font-size: 7px;
+    padding: 2px 6px;
+    margin-left: auto;
+}
+
+.hand-status-badge.beating {
+    color: var(--yellow);
+    background-color: var(--lava-dark);
+    border: 1px solid var(--yellow);
+}
+
+.hand-status-badge.losing {
+    color: var(--lava-bright);
+    background-color: var(--black);
+    border: 1px solid var(--lava-bright);
+}
+
+/* ── Phase panels ───────────────────────────────────────────── */
+.phase-panel {
+    background-color: var(--grey-dark);
+    padding: 16px;
+    border-top:    2px solid var(--orange);
+    border-left:   2px solid var(--orange);
+    border-bottom: 2px solid var(--deep-red);
+    border-right:  2px solid var(--deep-red);
+    box-shadow: 0 0 0 2px var(--black);
+}
+
+.phase-title {
+    font-family: var(--font-pixel);
+    font-size: 12px;
+    color: var(--yellow);
+    text-shadow: 2px 2px 0 var(--lava-bright);
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+}
+
+.phase-subtitle {
+    font-family: var(--font-pixel);
+    font-size: 7px;
+    color: var(--orange-glow);
+    margin-bottom: 14px;
+    letter-spacing: 1px;
+}
+
+/* ── Dome stats (idle panel) ────────────────────────────────── */
+.dome-stats {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.dome-stat {
+    background-color: var(--black);
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    border-top:  1px solid var(--lava-dark);
+    border-left: 1px solid var(--lava-dark);
+}
+
+.dome-stat-label {
+    font-family: var(--font-pixel);
+    font-size: 6px;
+    color: var(--orange-glow);
+    letter-spacing: 1px;
+}
+
+.dome-stat-value {
+    font-family: var(--font-pixel);
+    font-size: 14px;
+    color: var(--yellow);
+}
+
+.ante-preview {
+    font-family: var(--font-pixel);
+    font-size: 6px;
+    color: var(--lava-mid);
+    margin-bottom: 14px;
+    letter-spacing: 1px;
+}
+
+.ante-danger {
+    font-family: var(--font-pixel);
+    font-size: 7px;
+    color: var(--yellow);
+    background-color: var(--lava-dark);
+    padding: 6px 10px;
+    margin-bottom: 10px;
+    border-left: 3px solid var(--yellow);
+    animation: blink 3s step-end infinite;
+}
+
+/* ── Bet quick-picks ────────────────────────────────────────── */
+.bet-quick-picks {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.bet-quick-btn {
+    font-size: 8px;
+    padding: 8px 12px;
+    flex: 1;
+    min-width: 50px;
+}
+
+.bet-quick-btn.selected {
+    background-color: var(--lava-bright);
+    border-top-color:  var(--yellow);
+    border-left-color: var(--yellow);
+    color: var(--white);
+}
+
+/* ── Bet total & breakdown ─────────────────────────────────── */
+.bet-total {
+    font-family: var(--font-pixel);
+    font-size: 14px;
+    color: var(--yellow);
+    text-align: center;
+    margin-bottom: 4px;
+    letter-spacing: 1px;
+}
+
+.bet-breakdown {
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    color: var(--orange-glow);
+    text-align: center;
+    margin-bottom: 12px;
+    min-height: 14px;
+    letter-spacing: 0.5px;
+}
+
+/* ── Chip denomination controls ────────────────────────────── */
+.chip-denom-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 12px;
+}
+
+.chip-denom-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 3px 0;
+}
+
+.chip-denom-label {
+    font-family: var(--font-pixel);
+    font-size: 10px;
+    width: 28px;
+    text-align: right;
+    text-shadow: 1px 1px 0 #000;
+}
+
+.chip-btn {
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    font-size: 14px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.chip-btn.disabled {
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+.chip-denom-count {
+    font-family: var(--font-pixel);
+    font-size: 10px;
+    color: var(--yellow);
+    width: 22px;
+    text-align: center;
+}
+
+.withdraw-divider {
+    font-family: var(--font-pixel);
+    font-size: 6px;
+    color: var(--lava-mid);
+    text-align: center;
+    margin: 14px 0 10px;
+    letter-spacing: 1px;
+}
+
+.withdraw-label {
+    font-family: var(--font-pixel);
+    font-size: 7px;
+    color: var(--orange-glow);
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+    margin-top: 10px;
+}
+
+.withdraw-quick-picks {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+/* ── Bet input ──────────────────────────────────────────────── */
+.bet-custom {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.bet-custom input {
+    font-family: var(--font-pixel);
+    font-size: 12px;
+    background-color: var(--black);
+    color: var(--yellow);
+    border-top:    2px solid var(--deep-red);
+    border-left:   2px solid var(--deep-red);
+    border-bottom: 2px solid var(--orange);
+    border-right:  2px solid var(--orange);
+    padding: 8px 10px;
+    width: 140px;
+    outline: none;
+}
+
+.bet-custom input:focus {
+    border-color: var(--yellow);
+    box-shadow: 0 0 6px rgba(255, 200, 0, 0.3);
+}
+
+/* ── Risk badge ─────────────────────────────────────────────── */
+.risk-badge {
+    font-family: var(--font-pixel);
+    font-size: 7px;
+    padding: 4px 8px;
+    letter-spacing: 1px;
+}
+
+.risk-low    { color: #00cc44; border: 1px solid #00cc44; background: rgba(0,200,60,0.1); }
+.risk-medium { color: var(--orange-glow); border: 1px solid var(--orange-glow); background: rgba(255,120,0,0.1); }
+.risk-high   { color: var(--yellow); border: 1px solid var(--yellow); background: rgba(255,200,0,0.1); }
+.risk-all-in { color: var(--white); border: 1px solid var(--white); background: var(--lava-bright); animation: blink 0.8s step-end infinite; }
+
+/* ── Phase action buttons ───────────────────────────────────── */
+.phase-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+}
+
+.action-btn {
+    font-size: 9px;
+    padding: 10px 16px;
+    flex: 1;
+    min-width: 80px;
+}
+
+.action-btn.primary {
+    background-color: var(--lava-bright);
+    color: var(--yellow);
+}
+
+.action-btn.danger {
+    background-color: var(--deep-red);
+    border-top-color:  var(--lava-mid);
+    border-left-color: var(--lava-mid);
+}
+
+.action-btn.escape-btn {
+    background-color: var(--black);
+    color: var(--orange-glow);
+    border-color: var(--lava-dark);
+    font-size: 8px;
+}
+
+.action-btn.escape-btn:hover {
+    border-color: var(--orange);
+    color: var(--yellow);
+}
+
+/* ── Hand preview (in street panel) ────────────────────────── */
+.hand-preview {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    background-color: var(--black);
+    margin-bottom: 12px;
+    border-left: 3px solid var(--orange);
+}
+
+.hand-preview.partial {
+    border-left-color: var(--lava-dark);
+}
+
+.hand-preview-label {
+    font-family: var(--font-pixel);
+    font-size: 6px;
+    color: var(--orange-glow);
+}
+
+.hand-preview-value {
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    color: var(--yellow);
+}
+
+.hand-preview-pts {
+    font-family: var(--font-pixel);
+    font-size: 7px;
+    color: var(--orange-hot);
+    margin-left: auto;
+}
+
+/* ── Result panel ───────────────────────────────────────────── */
+.resolve-panel, .session-over-panel {
+    text-align: center;
+}
+
+.result-banner {
+    font-family: var(--font-pixel);
+    font-size: 14px;
+    margin-bottom: 12px;
+    letter-spacing: 2px;
+    text-shadow: 2px 2px 0 var(--black);
+}
+
+.result-win  .result-banner { color: var(--yellow); }
+.result-loss .result-banner { color: var(--lava-bright); }
+
+.result-hand {
+    font-family: var(--font-pixel);
+    font-size: 10px;
+    color: var(--white);
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+
+.result-meta {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--font-pixel);
+    font-size: 7px;
+    color: var(--orange-glow);
+    margin-bottom: 12px;
+}
+
+.result-chips {
+    font-family: var(--font-pixel);
+    font-size: 20px;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 0 var(--black);
+}
+
+.chips-won  { color: var(--yellow); }
+.chips-lost { color: var(--lava-bright); }
+
+.result-flavor {
+    font-family: var(--font-pixel);
+    font-size: 7px;
+    color: var(--orange-glow);
+    font-style: italic;
+    margin-bottom: 16px;
+    line-height: 1.8;
+    opacity: 0.8;
+}
+
+/* ── Cash-out panel ─────────────────────────────────────────── */
+.cashout-totals {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.cashout-stat {
+    flex: 1;
+    background-color: var(--black);
+    padding: 10px;
+    text-align: center;
+    border-top:  1px solid var(--lava-dark);
+    border-left: 1px solid var(--lava-dark);
+}
+
+.cashout-stat-label {
+    display: block;
+    font-family: var(--font-pixel);
+    font-size: 6px;
+    color: var(--orange-glow);
+    margin-bottom: 4px;
+}
+
+.cashout-stat-value {
+    font-family: var(--font-pixel);
+    font-size: 16px;
+    color: var(--yellow);
+}
+
+.cashout-label {
+    font-family: var(--font-pixel);
+    font-size: 7px;
+    color: var(--orange-glow);
+    margin-bottom: 8px;
+    letter-spacing: 1px;
+}
+
+/* ── Session over ───────────────────────────────────────────── */
+.session-stats {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.session-stat {
+    background-color: var(--black);
+    padding: 10px 16px;
+    text-align: center;
+    border-top:  1px solid var(--lava-dark);
+    border-left: 1px solid var(--lava-dark);
+    min-width: 100px;
+}
+
+.session-stat-label {
+    display: block;
+    font-family: var(--font-pixel);
+    font-size: 6px;
+    color: var(--orange-glow);
+    margin-bottom: 6px;
+}
+
+.session-stat-value {
+    font-family: var(--font-pixel);
+    font-size: 14px;
+    color: var(--yellow);
+}
+
+/* ── Error toast ────────────────────────────────────────────── */
+.error-toast {
+    font-family: var(--font-pixel);
+    font-size: 7px;
+    color: var(--yellow);
+    background-color: var(--lava-dark);
+    border-left: 3px solid var(--lava-bright);
+    padding: 8px 12px;
+    margin-top: 10px;
+    animation: fadeIn 0.15s ease-out;
+}

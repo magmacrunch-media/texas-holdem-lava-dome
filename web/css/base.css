@@ -1,0 +1,214 @@
+/* base.css - Texas Hold'Em Lava Dome | MagmaCrunch Media © 2024 */
+/* SNES-era retro pixel aesthetic */
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323:wght@400&display=swap');
+
+/* ── CSS Variables ─────────────────────────────────────────── */
+:root {
+    --mc-back-color: var(--cyan);
+    --mc-back-glow: 0 0 8px var(--cyan-glow);
+    /* Lava palette - SNES-style limited colors */
+    --black:        #0a0000;
+    --dark-red:     #1c0000;
+    --deep-red:     #3b0000;
+    --lava-dark:    #6b0000;
+    --lava-mid:     #9b0000;
+    --lava-bright:  #cc2200;
+    --orange:       #dd4400;
+    --orange-hot:   #ff5500;
+    --orange-glow:  #ff7700;
+    --yellow:       #ffcc00;
+    --yellow-pale:  #ffe680;
+    --white:        #fff8f0;
+    --grey-dark:    #1a0800;
+    --grey-mid:     #2e1200;
+
+    /* Pixel border system */
+    --px: 4px;
+    --px2: 8px;
+    --px3: 12px;
+
+    /* Font */
+    --font-pixel: 'Press Start 2P', monospace;
+    --font-mono:  'VT323', monospace;
+
+    /* Card colors - needed by Klondike's cards.css */
+    --card-face-bg: #f8f9fa;
+    --card-back-bg: #1a4a4a;
+    --fc-red: #cc0000;
+    --fc-black: #111111;
+    --fc-gold: #d4a017;
+    --fc-skin: #e8b89d;
+    --fc-art-bg: #f8f9fa;
+
+    /* Chip animation variables */
+    --chip-bg: #0a0000;
+    --chip-border: #3b0000;
+    --chip-text: #ffcc00;
+}
+
+/* ── Reset ─────────────────────────────────────────────────── */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    image-rendering: pixelated;
+}
+
+/* ── Body ──────────────────────────────────────────────────── */
+body {
+    font-family: var(--font-pixel);
+    background-color: var(--black);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 16px;
+    position: relative;
+    overflow: visible;
+}
+
+/* Scanlines + lava glow on a fixed pseudo-element so they're
+   composited independently — no repaints on scroll or animation */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-image:
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 3px,
+            rgba(0,0,0,0.15) 3px,
+            rgba(0,0,0,0.15) 4px
+        ),
+        radial-gradient(ellipse 80% 60% at 50% 100%,
+            rgba(180, 40, 0, 0.5) 0%,
+            rgba(80, 10, 0, 0.25) 50%,
+            transparent 100%
+        );
+}
+
+/* Container sits above the pseudo-element */
+.container {
+    position: relative;
+    z-index: 1;
+}
+
+/* ── Main container ────────────────────────────────────────── */
+.container {
+    background-color: var(--dark-red);
+    width: 100%;
+    max-width: 1100px;
+
+    /* SNES-style chunky pixel border */
+    border-top:    var(--px) solid var(--orange-glow);
+    border-left:   var(--px) solid var(--orange-glow);
+    border-bottom: var(--px) solid var(--lava-dark);
+    border-right:  var(--px) solid var(--lava-dark);
+    box-shadow:
+        0 0 0 var(--px) var(--black),
+        0 0 0 calc(var(--px)*2) var(--orange),
+        0 0 0 calc(var(--px)*3) var(--black),
+        0 0 40px rgba(255, 80, 0, 0.4),
+        inset 0 0 60px rgba(0,0,0,0.6);
+
+    padding: 20px;
+    position: relative;
+}
+
+/* Corner pixel accents */
+.container::before,
+.container::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background: var(--yellow);
+}
+.container::before { top: -4px; left: -4px; }
+.container::after  { bottom: -4px; right: -4px; }
+
+/* ── Pixel button system ───────────────────────────────────── */
+button {
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    color: var(--yellow);
+    background-color: var(--lava-dark);
+    border: none;
+    cursor: pointer;
+    padding: 10px 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    line-height: 1.4;
+
+    /* SNES raised button effect */
+    border-top:    3px solid var(--orange-hot);
+    border-left:   3px solid var(--orange-hot);
+    border-bottom: 3px solid var(--deep-red);
+    border-right:  3px solid var(--deep-red);
+    box-shadow:
+        0 0 0 2px var(--black),
+        2px 2px 0 2px var(--black);
+
+    transition: filter 0.08s, transform 0.08s;
+    position: relative;
+    top: 0;
+    left: 0;
+}
+
+button:hover {
+    filter: brightness(1.3);
+    background-color: var(--lava-mid);
+}
+
+button:active {
+    border-top:    3px solid var(--deep-red);
+    border-left:   3px solid var(--deep-red);
+    border-bottom: 3px solid var(--orange-hot);
+    border-right:  3px solid var(--orange-hot);
+    top: 2px;
+    left: 2px;
+    box-shadow:
+        0 0 0 2px var(--black),
+        0px 0px 0 2px var(--black);
+}
+
+/* ── Pixel panel utility ───────────────────────────────────── */
+.pixel-panel {
+    background-color: var(--grey-dark);
+    border-top:    3px solid var(--orange);
+    border-left:   3px solid var(--orange);
+    border-bottom: 3px solid var(--deep-red);
+    border-right:  3px solid var(--deep-red);
+    box-shadow: 0 0 0 2px var(--black);
+}
+
+/* ── Typography helpers ────────────────────────────────────── */
+.pixel-text {
+    font-family: var(--font-pixel);
+    color: var(--yellow);
+}
+
+.pixel-label {
+    font-family: var(--font-pixel);
+    font-size: 7px;
+    color: var(--orange-glow);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* ── Blinking cursor animation ─────────────────────────────── */
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+}
+
+/* ── Pixel shimmer (for highlights) ───────────────────────── */
+@keyframes pixelShimmer {
+    0%   { color: var(--yellow); }
+    50%  { color: var(--white); }
+    100% { color: var(--yellow); }
+}

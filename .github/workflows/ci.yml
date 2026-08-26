@@ -27,4 +27,5 @@ jobs:
       # the ten totals against the published frequencies, so this job is doing
       # real work rather than a smoke test — and still finishes in seconds.
       - name: make test
+        working-directory: wii
         run: make test

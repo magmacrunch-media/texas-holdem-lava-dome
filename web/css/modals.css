@@ -1,0 +1,257 @@
+/* modals.css - Texas Hold'Em Lava Dome modals */
+
+/* ── Modal overlay ─────────────────────────────────────────── */
+.instructions-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    pointer-events: none;
+
+    /* CRT scanlines on overlay */
+    background-image:
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 3px,
+            rgba(0,0,0,0.15) 3px,
+            rgba(0,0,0,0.15) 4px
+        ),
+        linear-gradient(rgba(0,0,0,0.85), rgba(0,0,0,0.85));
+}
+
+.instructions-modal.active {
+    display: flex;
+    pointer-events: auto;
+    animation: modalIn 0.15s ease-out;
+}
+
+@keyframes modalIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+/* ── Modal content box ─────────────────────────────────────── */
+.instructions-content {
+    background-color: var(--dark-red);
+    padding: 28px 24px;
+    max-width: 480px;
+    width: 90%;
+    pointer-events: auto;
+    position: relative;
+    z-index: 1001;
+
+    /* SNES pixel frame */
+    border-top:    4px solid var(--orange-glow);
+    border-left:   4px solid var(--orange-glow);
+    border-bottom: 4px solid var(--deep-red);
+    border-right:  4px solid var(--deep-red);
+    box-shadow:
+        0 0 0 2px var(--black),
+        0 0 0 6px var(--orange),
+        0 0 0 8px var(--black),
+        0 0 40px rgba(255, 80, 0, 0.5);
+}
+
+/* Corner accents */
+.instructions-content::before,
+.instructions-content::after {
+    content: '▪';
+    position: absolute;
+    color: var(--yellow);
+    font-size: 12px;
+}
+.instructions-content::before { top: 6px; right: 8px; }
+.instructions-content::after  { bottom: 6px; left: 8px; }
+
+/* ── Modal typography ──────────────────────────────────────── */
+.instructions-content h3 {
+    font-family: var(--font-pixel);
+    color: var(--yellow);
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 13px;
+    line-height: 1.6;
+    text-shadow: 2px 2px 0 var(--lava-bright), 4px 4px 0 var(--deep-red);
+    letter-spacing: 1px;
+}
+
+.instructions-content h4 {
+    font-family: var(--font-pixel);
+    color: var(--orange-glow);
+    margin-top: 16px;
+    margin-bottom: 8px;
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.instructions-content p {
+    font-family: var(--font-pixel);
+    color: var(--yellow-pale);
+    font-size: 7px;
+    line-height: 2.2;
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+}
+
+.instructions-content ul {
+    list-style: none;
+    margin-bottom: 12px;
+    padding-left: 0;
+}
+
+.instructions-content li {
+    font-family: var(--font-pixel);
+    color: var(--yellow-pale);
+    font-size: 7px;
+    line-height: 2.2;
+    margin-bottom: 4px;
+    padding-left: 14px;
+    position: relative;
+}
+
+.instructions-content li::before {
+    content: '►';
+    position: absolute;
+    left: 0;
+    color: var(--orange-hot);
+    font-size: 7px;
+}
+
+.instructions-content button {
+    margin-top: 20px;
+    width: 100%;
+    font-size: 9px;
+    padding: 12px;
+}
+
+/* Initials input */
+#initialsInput {
+    font-family: var(--font-pixel) !important;
+    font-size: 20px !important;
+    width: 100%;
+    padding: 12px !important;
+    text-align: center;
+    text-transform: uppercase;
+    background-color: var(--black) !important;
+    color: var(--yellow) !important;
+    margin-bottom: 12px;
+
+    border-top:    2px solid var(--deep-red) !important;
+    border-left:   2px solid var(--deep-red) !important;
+    border-bottom: 2px solid var(--orange) !important;
+    border-right:  2px solid var(--orange) !important;
+    border-radius: 0 !important;
+
+    outline: none;
+    box-shadow: 0 0 0 2px var(--black), inset 0 0 8px rgba(0,0,0,0.5);
+}
+
+#initialsInput:focus {
+    border-color: var(--yellow) !important;
+    box-shadow: 0 0 0 2px var(--black), 0 0 8px rgba(255, 200, 0, 0.4);
+}
+
+/* ── High scores modal ─────────────────────────────────────── */
+.scoreboard-modal {
+    max-width: 560px;
+}
+
+.scoreboard-modal h2 {
+    font-family: var(--font-pixel);
+    color: var(--yellow);
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 16px;
+    text-shadow: 2px 2px 0 var(--lava-bright), 4px 4px 0 var(--deep-red);
+    letter-spacing: 1px;
+}
+
+.scoreboard-header {
+    display: grid;
+    grid-template-columns: 48px 1fr 80px;
+    gap: 8px;
+    padding: 8px 10px;
+    background-color: var(--lava-dark);
+    margin-bottom: 8px;
+    border-bottom: 2px solid var(--orange);
+}
+
+.scoreboard-header span {
+    font-family: var(--font-pixel);
+    color: var(--orange-glow);
+    font-size: 7px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: center;
+}
+
+.score-entry {
+    display: grid;
+    grid-template-columns: 48px 1fr 80px;
+    gap: 8px;
+    padding: 8px 10px;
+    background-color: var(--black);
+    margin-bottom: 4px;
+    align-items: center;
+    text-align: center;
+    transition: background-color 0.1s;
+
+    border-top:    1px solid var(--lava-dark);
+    border-left:   1px solid var(--lava-dark);
+    border-bottom: 1px solid var(--deep-red);
+    border-right:  1px solid var(--deep-red);
+}
+
+.score-entry:hover {
+    background-color: var(--grey-mid);
+}
+
+.score-entry.new-score {
+    background-color: var(--deep-red);
+    border-top:   1px solid var(--yellow);
+    border-left:  1px solid var(--yellow);
+    animation: newScorePop 0.6s ease-out;
+}
+
+@keyframes newScorePop {
+    0%   { transform: scaleX(0.9); opacity: 0.5; }
+    60%  { transform: scaleX(1.02); }
+    100% { transform: scaleX(1); opacity: 1; }
+}
+
+.score-entry .rank {
+    font-family: var(--font-pixel);
+    font-size: 8px;
+    color: var(--orange-glow);
+}
+
+.score-entry .initials {
+    font-family: var(--font-pixel);
+    font-size: 11px;
+    color: var(--white);
+    letter-spacing: 3px;
+}
+
+.credits-footer {
+    font-family: var(--font-pixel);
+    font-size: 6px;
+    color: var(--lava-dark);
+    text-align: center;
+    margin-top: 20px;
+    letter-spacing: 1px;
+}
+
+.score-entry .score-value {
+    font-family: var(--font-pixel);
+    font-size: 11px;
+    color: var(--yellow);
+    text-shadow: 0 0 6px rgba(255, 200, 0, 0.5);
+}

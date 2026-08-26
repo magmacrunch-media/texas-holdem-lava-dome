@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Texas Hold'Em Lava Dome</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <link rel="icon" href="../../arcade/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../shared/arcade-base.css?v=de5e0d7b">
+    <link rel="stylesheet" href="css/base.css?v=0539e240">
+    <link rel="stylesheet" href="css/start-screen.css?v=bee0168a">
+    <link rel="stylesheet" href="css/game-layout.css?v=cd686416">
+    <link rel="stylesheet" href="../shared/cards/cards.css?v=143409ef">
+    <link rel="stylesheet" href="../shared/chips/chip-animation.css?v=402e0cf4">
+    <link rel="stylesheet" href="css/modals.css?v=e760772b">
+    <link rel="stylesheet" href="css/responsive.css?v=eb1682ef">
+</head>
+<body>
+<a href="../" class="mc-back">magmacrunch arcade</a>
+
+<div class="container">
+        <!-- Start Screen -->
+        <div id="startScreen" class="start-screen">
+            <div class="start-content">
+                <h1 class="game-title">TEXAS HOLD'EM<br>LAVA DOME</h1>
+                <p class="game-subtitle">solo poker</p>
+
+                <div class="start-divider"></div>
+
+                <div class="start-buttons">
+                    <button id="startGameBtn" class="start-btn primary">Start Game</button>
+                    <button id="viewRulesBtn" class="start-btn">How to Play</button>
+                    <button id="viewScoresBtn" class="start-btn">High Scores</button>
+                    <button id="viewCreditsBtn" class="start-btn">Credits</button>
+                </div>
+
+                <div class="start-footer">
+                    <p>Build poker hands &bull; Score big &bull; Master the lava grid</p>
+                </div>
+                <p class="start-copyright">&copy; 2024 MAGMACRUNCH MEDIA &mdash; ALL RIGHTS RESERVED</p>
+            </div>
+        </div>
+
+        <!-- Game Screen (populated by ui.js at runtime) -->
+        <div id="gameScreen" style="display: none;"></div>
+    </div>
+
+    <!-- Instructions Modal -->
+    <div class="instructions-modal" id="instructionsModal">
+        <div class="instructions-content">
+            <h3>How to Play</h3>
+
+            <h4>The Goal</h4>
+            <p>Survive as long as possible inside the dome. Build your bank before it claims you.</p>
+
+            <h4>Each Round</h4>
+            <ul>
+                <li>The dome charges an ante from your chips</li>
+                <li>You receive 2 hole cards — place your bet</li>
+                <li>The flop, turn, and river are revealed one at a time</li>
+                <li>Raise or check at each street, or fold to cut losses</li>
+                <li>Your best 5-card hand is judged against the dome threshold</li>
+                <li>Beat it: win chips. Miss it: lose your bet</li>
+            </ul>
+
+            <h4>The Bank</h4>
+            <p>After each round, cash out chips into your bank. Banked chips are safe — but chips left in play can win you more. Your final score is your bank total.</p>
+
+            <h4>Escape or Bust</h4>
+            <ul>
+                <li>Escape: cash out everything and end the session voluntarily</li>
+                <li>Bust: chip stack hits zero — the dome wins</li>
+            </ul>
+
+            <h4>Hand Values</h4>
+            <ul>
+                <li>Royal Flush: 1000 pts / 10x payout</li>
+                <li>Straight Flush: 500 pts / 6x payout</li>
+                <li>Four of a Kind: 250 pts / 4x payout</li>
+                <li>Full House: 150 pts / 3x payout</li>
+                <li>Flush: 100 pts / 2.5x payout</li>
+                <li>Straight: 75 pts / 2x payout</li>
+                <li>Three of a Kind: 50 pts / 1.5x payout</li>
+                <li>Two Pair: 25 pts / 1.25x payout</li>
+                <li>One Pair: 10 pts / 1x payout</li>
+                <li>High Card: cannot beat the dome</li>
+            </ul>
+
+            <p>The dome threshold rises each round. Antes escalate. Know when to escape.</p>
+
+            <button id="closeInstructions">Close</button>
+        </div>
+    </div>
+
+    <!-- Initials Modal -->
+    <div class="instructions-modal" id="initialsModal">
+        <div class="instructions-content">
+            <h3>New High Score!</h3>
+            <p>Enter your initials:</p>
+            <input type="text" id="initialsInput" maxlength="3" placeholder="AAA">
+            <button id="submitInitials">Submit</button>
+        </div>
+    </div>
+
+    <!-- High Scores Modal -->
+    <div class="instructions-modal" id="highScoresModal">
+        <div class="instructions-content scoreboard-modal">
+            <h2>High Scores</h2>
+            <div class="scoreboard-header">
+                <span>Rank</span>
+                <span>Name</span>
+                <span>Score</span>
+            </div>
+            <div id="highScoresList"></div>
+            <button id="closeHighScores">Close</button>
+        </div>
+    </div>
+
+    <!-- Credits Modal -->
+    <div class="instructions-modal" id="creditsModal">
+        <div class="instructions-content">
+            <h3>credits</h3>
+
+            <h4>Texas Hold'Em Lava Dome</h4>
+            <p>A solo card game inspired by <em>Texas hold'em</em> poker, <em>Poker Squares</em>, and the band <a href="../../archive/by-artist/thld/" target="_blank" style="color: var(--orange-glow);"><em>Texas Hold'Em Lava Dome</em></a>. </p>
+
+            <h4>Game Design & Development</h4>
+            <p>Jake A. McCoy</p>
+
+            <h4>technology & resources</h4>
+            <p>
+            • Press Start 2P font by CodeMan38 (Google Fonts)<br>
+            • HTML5 Canvas API<br>
+            • MAGMA//OPS backend (high score persistence)<br>
+            • pure vanilla JavaScript
+            </p>
+
+            <h4>Publisher</h4>
+            <p>magmacrunch media</p>
+
+            <h4>Cheapness Impact Factor</h4>
+            <p>3.3</p>
+
+            <h4>Last Updated</h4>
+            <p>May 3, 2026</p>
+
+            <p class="credits-footer">&copy; 2026 MAGMACRUNCH MEDIA &mdash; ALL RIGHTS RESERVED</p>
+
+            <button id="closeCredits">Close</button>
+        </div>
+    </div>
+
+    <!-- JavaScript files - ORDER MATTERS! -->
+    <script src="../shared/adenosine-cards.js?v=4360fcce"></script>
+    <script src="../shared/adenosine-score-client.js?v=55cabd6d"></script>
+    <script src="../shared/score-server.js?v=9acd988c"></script>
+    <script>const scoreClient = new AdScore.ScoreClient().auto(MC_SCORE_OPTS);</script>
+    <script src="js/config.js?v=66951457"></script>
+    <script src="js/state.js?v=67876ea3"></script>
+    <script src="js/dealer.js?v=18befaa7"></script>
+    <script src="js/dome.js?v=4ce39979"></script>
+    <script src="js/betting.js?v=cf7ababc"></script>
+    <script src="js/scoring.js?v=e4260e78"></script>
+    <script src="js/ui.js?v=165aec75"></script>
+    <script src="js/main.js?v=ed7eda52"></script>
+
+<link rel="stylesheet" href="../shared/chat-widget.css?v=4fb80289">
+<script src="../shared/adenosine-chat.js?v=7b669821"></script>
+<script src="../shared/chat-server.js?v=2efa8028"></script>
+<script>const { ChatWidget } = AdChat;</script>
+<script>ChatWidget.connect(MC_CHAT_OPTS);</script>
+
+</body>
+</html>
