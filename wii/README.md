@@ -243,9 +243,10 @@ keep playing rather than stopping somewhere that looks like progress:
 
 ## License
 
-Code under the [Apache License 2.0](../LICENSE) — the hand evaluator and the sweep
-that proves it, the dome's ante and threshold model, and the procedural card
-rendering are all reusable, and worth reusing.
+Under the [PolyForm Noncommercial License 1.0.0](../LICENSE), like the rest of
+the repository — the hand evaluator and the sweep that proves it, the dome's
+ante and threshold model, and the procedural card rendering are all there to
+read and build on for any noncommercial purpose. Commercial use is reserved.
 
 The game's name, the lava palette and visual design, the depth labels, and any
 art or audio added later are © 2026 magmacrunch media, all rights reserved, and

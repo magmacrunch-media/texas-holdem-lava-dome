@@ -1,31 +1,43 @@
-Texas Hold'Em Lava Dome -- Wii port
+Texas Hold'Em Lava Dome
 Copyright 2026 magmacrunch media
 
 
-WHAT THE APACHE LICENSE COVERS
+THE LICENCE
 
-The source code in source/ and tests/, the Makefile, the CI workflow and the
-documentation, under the Apache License 2.0 in the LICENSE file beside this one.
+Everything in this repository -- the browser version in web/, the Wii port in
+wii/, the tests, the build files and the documentation -- is licensed under the
+PolyForm Noncommercial License 1.0.0, in the LICENSE file beside this one.
 
-That is the part worth reusing: the hand evaluator and the sweep that proves it
-against the published five-card frequencies, the dome's ante and threshold
-model, and the card rendering built from GRRLIB primitives rather than image
-assets. Take it.
+Read it, learn from it, build on it, play with it. Any noncommercial purpose is
+permitted, and that includes personal projects, teaching and research. What is
+not permitted is commercial use: selling the game or a derivative of it,
+shipping it inside a product, or running it as part of a business.
+
+This is a change from the Apache License 2.0 that earlier versions of the Wii
+port carried. Commits made before that change remain available under Apache 2.0
+in the git history; everything from the relicensing commit forward is
+PolyForm Noncommercial.
+
+A note on the poker in here, since it invites the question: the rules of Texas
+Hold'Em are not anyone's property and this licence does not pretend otherwise.
+What is licensed is this implementation of them -- the hand evaluator, the sweep
+that proves it against the published five-card frequencies, the dome's ante and
+threshold model, and the card rendering built from GRRLIB primitives rather than
+image assets.
 
 
-WHAT IT DOES NOT COVER
+WHAT IS RESERVED OUTRIGHT
 
-This game currently ships no art or audio at all -- the cards, pips and table
-are drawn procedurally, so sprites/ and audio/ hold only placeholder READMEs.
+The Wii port ships no art or audio at all -- the cards, pips and table are drawn
+procedurally, so wii/sprites/ and wii/audio/ hold only placeholder READMEs.
 Nothing is being reserved that is not here.
 
 What is reserved: the game's name, the Texas Hold'Em Lava Dome and magmacrunch
 names and marks, the lava palette and visual design, the depth labels drawn from
-the band's song titles, and any art or audio added to sprites/ or audio/ later.
+the band's song titles, and any art or audio added later.
 
-Those are Copyright 2026 magmacrunch media, all rights reserved. The Apache
-License does not grant rights to them, and section 6 of that licence does not
-grant trademark rights in any case.
+Those are Copyright 2026 magmacrunch media, all rights reserved. The licence
+covers the software, and it grants no trademark rights.
 
 If you want to use any of it, ask.
 
@@ -33,11 +45,13 @@ If you want to use any of it, ask.
 THIRD-PARTY COMPONENTS
 
 Press Start 2P, by CodeMan38, licensed under the SIL Open Font License 1.1. The
-font is embedded in the binary by way of magnolia rather than shipped here as a
-file.
+font is embedded in the Wii binary by way of magnolia rather than shipped here
+as a file.
 
-magnolia, the Wii engine this game is built on, Copyright 2026 magmacrunch
-Media, under the Apache License 2.0.
+magnolia, the Wii engine the port is built on, and adenosine, the browser engine
+the web version uses, are Copyright 2026 magmacrunch media under the Apache
+License 2.0. They are separate repositories and keep that licence -- the engines
+are meant to be reused; this game is not.
 
 GRRLIB and devkitPPC are used under their own terms and are not distributed
 here.

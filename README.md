@@ -28,3 +28,11 @@ Change `web/` first, then carry the change into `wii/source/`.
 
 This repo was formed from `texas-holdem-lava-dome-wii` (whose history it
 keeps) plus the browser version imported from the website repo.
+
+## License
+
+[PolyForm Noncommercial License 1.0.0](LICENSE) — read it, learn from it, build
+on it, play with it. Any noncommercial purpose is permitted; commercial use is
+reserved. The game's name, art, audio and visual design are reserved outright
+and are not covered by that licence: see [NOTICE](NOTICE) for the exact
+boundary and the third-party components.
