@@ -4,6 +4,9 @@ Solo Texas Hold'Em against an escalating dome: beat the threshold or forfeit
 the bet, bank your chips or leave them in play. One repo, every version of
 the game.
 
+Named after the band Texas Hold'Em Lava Dome, on the magmacrunch media record
+label, whose song titles supply the flavour text on the depth screens.
+
 | Version | Folder | Engine | Where it runs |
 |---------|--------|--------|---------------|
 | Browser | [`web/`](web/) | [adenosine](https://github.com/magmacrunchmedia/adenosine) | [magmacrunch.com/arcade/solitaire_THLD](https://magmacrunch.com/arcade/solitaire_THLD/) |
