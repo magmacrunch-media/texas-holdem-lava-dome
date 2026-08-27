@@ -19,6 +19,7 @@ that matter — they just cannot prove agreement.
 from __future__ import annotations
 
 import json
+import os
 import random
 import shutil
 import subprocess
@@ -30,12 +31,34 @@ from lavadome.cards import RANKS, SUITS, Card, poker_value
 from lavadome.handeval import HAND_POINTS, HAND_RANKS, HandEvaluator
 
 ORACLE = Path(__file__).resolve().parent.parent / "tools" / "js_oracle.mjs"
-BUNDLE = (Path(__file__).resolve().parents[3]
-          / "website" / "arcade" / "shared" / "adenosine-cards.js")
+
+
+def _oracle_source() -> str | None:
+    """Which JavaScript the oracle would use, or None if it has none.
+
+    Asked of the oracle rather than guessed here: it knows about both the npm
+    package and the vendored bundle, and the two live in completely different
+    places. Guessing paths in Python is how this ends up skipping silently on a
+    machine where it could in fact have run.
+    """
+    if shutil.which("node") is None or not ORACLE.exists():
+        return None
+    try:
+        proc = subprocess.run(
+            ["node", str(ORACLE), "--check"],
+            capture_output=True, text=True, timeout=60, encoding="utf-8",
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return proc.stdout.strip() if proc.returncode == 0 else None
+
+
+ORACLE_SOURCE = _oracle_source()
 
 requires_oracle = pytest.mark.skipif(
-    shutil.which("node") is None or not ORACLE.exists() or not BUNDLE.exists(),
-    reason="needs node and the vendored adenosine-cards.js bundle",
+    ORACLE_SOURCE is None,
+    reason=("no JavaScript evaluator to compare against — install node and run "
+            "`npm install --prefix tui/tools`"),
 )
 
 
@@ -222,10 +245,29 @@ def _compare_batch(hands: list[list[Card]]) -> None:
 
 
 @requires_oracle
-def test_the_oracle_loads_the_shipped_bundle():
+def test_the_oracle_loads_a_real_javascript_evaluator():
+    assert ORACLE_SOURCE.startswith(("npm:", "bundle:")), ORACLE_SOURCE
     results = _js_evaluate([hand("As", "Ks", "Qs", "Js", "10s")])
     assert results[0]["name"] == "Royal Flush"
     assert results[0]["points"] == 1000
+
+
+@pytest.mark.skipif(
+    os.environ.get("LAVADOME_REQUIRE_ORACLE") != "1",
+    reason="set LAVADOME_REQUIRE_ORACLE=1 to make a missing oracle a failure",
+)
+def test_the_oracle_is_available_when_ci_says_it_must_be():
+    """CI sets LAVADOME_REQUIRE_ORACLE=1 so a missing oracle fails loudly.
+
+    Skipping is right on a dev box with no node. In CI it would turn the one
+    test that proves the port agrees with the original into a silent pass —
+    the same trap texastoast's conftest guards against with
+    TEXASTOAST_REQUIRE_TK.
+    """
+    assert ORACLE_SOURCE is not None, (
+        "LAVADOME_REQUIRE_ORACLE=1 but no JavaScript evaluator was found; "
+        "the differential tests would have skipped and reported green"
+    )
 
 
 @requires_oracle
