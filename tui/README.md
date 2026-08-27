@@ -45,6 +45,22 @@ different game.
 
 Needs a terminal at least 58x22.
 
+## Launchable by an arcade
+
+The game declares itself through an entry point, so anything enumerating
+`magmacrunch.games` finds it:
+
+```toml
+[project.entry-points."magmacrunch.games"]
+thld = "lavadome.arcade:GAME"
+```
+
+It does not own the terminal. A `texastoast.core.tui_host.TuiHost` does, and
+`LavaDomeApp` is handed one — which is what lets the same code run as its own
+command and be seated by a launcher without knowing which happened. Esc from
+the title screen ends a standalone session and returns to the arcade menu under
+a launcher; the game just pops a scene and the host decides what that means.
+
 ## How it is built
 
 ```

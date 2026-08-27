@@ -1,92 +1,97 @@
-"""Wiring — the game, the renderer, and the scene stack.
+"""Wiring — what outlives a single run, and how the screens reach it.
 
 Everything that draws lives in :mod:`lavadome.scenes`; everything that decides
 lives in :mod:`lavadome.dome`, :mod:`lavadome.betting` and
-:mod:`lavadome.handeval`. This module holds them together and owns what
-outlives a single run.
+:mod:`lavadome.handeval`.
+
+**The terminal is not owned here.** It belongs to a
+:class:`~texastoast.core.tui_host.TuiHost`, which this is handed. That is what
+lets the game run as its own command *and* be seated by a launcher without
+knowing which happened.
+
+What is left is genuinely this game's: the shuffle, whether suits are drawn as
+glyphs, and the best bank reached.
 """
 
 from __future__ import annotations
 
 import random
-
-from texastoast.core.tui_game import TuiGame, TuiInput
-from texastoast.scene import SceneStack
+from typing import Any
 
 from lavadome.scenes import GameScene, RulesScene, TitleScene
 
-FPS = 20
-
 
 class LavaDomeApp:
-    """Owns the terminal game and the screen stack."""
+    """A session of Lava Dome, drawing on somebody else's terminal."""
 
-    def __init__(self, seed: int | None = None, ascii_only: bool = False,
-                 skip_title: bool = False):
+    def __init__(self, host: Any, seed: int | None = None,
+                 ascii_only: bool = False):
+        self.host = host
         self.rng = random.Random(seed)
         self.seed = seed
         self.ascii_only = ascii_only
-        #: Best bank reached, for the life of this process.
+        #: Best bank reached, for as long as this session lasts.
         self.best_bank = 0
 
-        # hold_ms=0 gives edge semantics — one keystroke, one action. This is a
-        # turn-based card game; a decay timer would turn a single arrow press
-        # into a runaway bet adjustment, because terminals report key repeats
-        # but never releases.
-        self.game = TuiGame(title="Texas Hold'Em Lava Dome",
-                            fps=FPS, input_source=TuiInput(hold_ms=0))
-        self.renderer = self.game.renderer
+        #: The title screen. The caller pushes it — a game that pushed its own
+        #: scene would take that decision away from whatever is seating it.
+        self.root_scene = TitleScene(self)
 
-        self.stack = SceneStack()
-        self.game.set_update(self.update)
-        self.game.set_render(self.stack.render)
+    # ── What the scenes reach for ───────────────────────────────────
 
-        # The title screen is always the bottom of the stack, so Esc from a run
-        # has somewhere to land and no scene needs an "on title" flag.
-        self.stack.push(TitleScene(self))
-        if skip_title:
-            self.stack.push(GameScene(self))
+    @property
+    def renderer(self):
+        return self.host.renderer
 
-    # ── Scene transitions ───────────────────────────────────────────
+    @property
+    def game(self):
+        """The terminal app.
+
+        Named ``game`` because that is what the scenes called it when this
+        class owned one. It is the host's now.
+        """
+        return self.host
 
     def start_run(self) -> None:
-        self.stack.push(GameScene(self))
+        self.host.push_scene(GameScene(self))
 
     def show_rules(self) -> None:
-        self.stack.push(RulesScene(self))
+        self.host.push_scene(RulesScene(self))
 
     def pop_scene(self) -> None:
-        if len(self.stack) > 1:
-            self.stack.pop()
+        """Leave the top screen.
+
+        Popping the title screen ends a standalone session and returns to the
+        arcade menu under a launcher. The game does not need to know which —
+        see ``TuiHost.pop_scene``.
+        """
+        self.host.pop_scene()
 
     def record_bank(self, amount: int) -> None:
         self.best_bank = max(self.best_bank, amount)
 
-    # ── Frame ───────────────────────────────────────────────────────
-
-    def update(self, dt: float) -> None:
-        """Route keys to the top scene, then run the stack's own update.
-
-        Keys are drained here rather than bound individually because a terminal
-        delivers them as a stream and the stack decides who gets them:
-        ``dispatch_key`` reaches the top scene only, which is the same modality
-        rule that governs updates.
-        """
-        for key in self.game.input.drain():
-            self.stack.dispatch_key(key)
-        self.stack.update(dt)
-
-    # ── Introspection, for tests and callers ────────────────────────
+    # ── Introspection, for tests ────────────────────────────────────
 
     @property
     def scene(self):
-        return self.stack.top
+        return self.host.scene
 
     @property
     def in_game(self) -> bool:
-        return isinstance(self.stack.top, GameScene)
+        return isinstance(self.host.scene, GameScene)
 
 
 def run(seed: int | None = None, ascii_only: bool = False,
         skip_title: bool = False) -> None:
-    LavaDomeApp(seed, ascii_only, skip_title).game.start()
+    """Play Lava Dome as its own command."""
+    from texastoast.core.tui_host import TuiHost
+
+    from lavadome.arcade import GAME
+
+    host = TuiHost(title=GAME.info.title, fps=GAME.info.fps,
+                   hold_ms=GAME.info.hold_ms)
+    app = LavaDomeApp(host, seed, ascii_only)
+    host.push_scene(app.root_scene)
+    if skip_title:
+        host.push_scene(GameScene(app))
+    host.run()
