@@ -15,7 +15,7 @@ from __future__ import annotations
 import textwrap
 from dataclasses import replace
 
-from texastoast.ui import DEFAULT_THEME, Menu
+from texastoast.ui import DEFAULT_THEME, Menu, bigtext
 
 from lavadome import config, theme
 from lavadome.betting import Betting
@@ -55,6 +55,23 @@ def _menu_theme():
         outline_width=1,
         selection_fill=theme.MENU_SELECTION_BG,
     )
+
+
+def _draw_title(renderer, cx: int) -> int:
+    """The name, as big as the window allows. Returns the row below it.
+
+    Block letters when there is room, the plain banner when there is not — the
+    title screen has a menu under it and a title that pushed it off a short
+    terminal would be a title nobody could get past. See
+    :mod:`texastoast.ui.bigtext` for why lettering has to be drawn at all.
+    """
+    if (bigtext.fits(theme.BIG_TITLE, renderer.width - 2)
+            and renderer.height >= theme.BIG_TITLE_MIN_ROWS):
+        for row, line in enumerate(bigtext.lines(theme.BIG_TITLE)):
+            renderer.ui_text(cx, 1 + row, line, fill=theme.TITLE, anchor="n")
+        return 1 + bigtext.GLYPH_H
+    renderer.ui_text(cx, 1, theme.BANNER, fill=theme.TITLE, anchor="n")
+    return 2
 
 
 def _too_small(renderer, cols: int, rows: int) -> bool:
@@ -139,9 +156,8 @@ class TitleScene:
             return
 
         cx = r.width // 2
-        r.ui_text(cx, 1, theme.BANNER, fill=theme.TITLE, anchor="n")
-        r.ui_text(cx, 2, "solo hold'em against an escalating threshold",
-                  fill=theme.DIM, anchor="n")
+        y = _draw_title(r, cx)
+        r.ui_text(cx, y, theme.SUBTITLE, fill=theme.DIM, anchor="n")
         self.menu.render()
 
         if self.app.best_bank:

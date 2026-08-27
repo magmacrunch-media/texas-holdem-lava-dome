@@ -56,7 +56,14 @@ CARD_W = 5
 CARD_H = 3
 CARD_GAP = 1
 
+#: The plain title, and the fallback when the block face will not fit.
 BANNER = "TEXAS HOLD'EM LAVA DOME"
+SUBTITLE = "solo hold'em against an escalating threshold"
+
+#: Drawn in :mod:`texastoast.ui.bigtext` when there is room. The block face
+#: carries "LAVA DOME" rather than the full name: the whole banner would be
+#: 114 columns in block letters, and the part worth shouting is the dome.
+BIG_TITLE = "LAVA DOME"
 
 # ── Layout ──────────────────────────────────────────────────────────
 
@@ -79,6 +86,11 @@ MIN_ROWS = ACTIONS_Y + 3
 
 MENU_MIN_COLS = 46
 MENU_MIN_ROWS = 16
+
+#: The block title costs two rows more than the plain one. Below this the
+#: plain banner is drawn instead, which is what keeps the screen usable at
+#: MENU_MIN_ROWS.
+BIG_TITLE_MIN_ROWS = MENU_MIN_ROWS + 3
 
 MENU_W = 30
 MENU_ITEM_H = 1

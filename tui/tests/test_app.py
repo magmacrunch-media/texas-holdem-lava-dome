@@ -13,6 +13,7 @@ import pytest
 pytest.importorskip("textual", reason='needs: pip install -e ".[dev]" with texastoast[tui]')
 
 from texastoast.core.tui_host import TuiHost  # noqa: E402
+from texastoast.ui import bigtext  # noqa: E402
 
 from lavadome import config, theme  # noqa: E402
 from lavadome.app import LavaDomeApp  # noqa: E402
@@ -306,12 +307,38 @@ def test_the_title_screen_renders():
             await pilot.pause()
             await asyncio.sleep(0.25)
             text = buffer_text(app)
-            assert theme.BANNER in text
+            assert bigtext.lines(theme.BIG_TITLE)[0] in text
+            assert theme.SUBTITLE in text
             assert "DESCEND INTO THE DOME" in text
             assert "HOW TO PLAY" in text
             app.host.quit()
 
     run(go())
+
+
+def test_a_short_terminal_gets_the_plain_banner_instead_of_block_letters():
+    """A title that pushed the menu off the screen would be a title nobody
+    could get past."""
+    async def go():
+        app = hosted(seed=1)
+        async with await _piloted(app, size=(theme.MENU_MIN_COLS,
+                                             theme.MENU_MIN_ROWS)) as pilot:
+            await pilot.pause()
+            await asyncio.sleep(0.25)
+            text = buffer_text(app)
+            assert theme.BANNER in text
+            assert bigtext.lines(theme.BIG_TITLE)[0] not in text
+            assert "DESCEND INTO THE DOME" in text, "the menu is still reachable"
+            app.host.quit()
+
+    run(go())
+
+
+def test_the_block_title_is_the_dome_not_the_whole_name():
+    """The full banner would be 114 columns in block letters. The part worth
+    shouting is the dome."""
+    assert bigtext.width(theme.BANNER) > 100
+    assert bigtext.fits(theme.BIG_TITLE, 78)
 
 
 def test_the_table_renders_cards_stats_and_actions():
