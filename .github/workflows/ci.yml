@@ -92,15 +92,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      # TODO: delete this step once texastoast 0.6.0 is on PyPI — pyproject.toml
-      # already declares `texastoast[tui]>=0.6.0` and the install below will
-      # resolve it on its own. Until then the terminal backend exists only on a
-      # branch, so the fallback is the only way this job can run at all.
-      - name: Install texastoast
-        run: |
-          pip install "texastoast[tui]>=0.6.0" || pip install \
-            "texastoast[tui] @ git+https://github.com/magmacrunchmedia/texastoast@feat/terminal-backend"
-
+      # texastoast[tui]>=0.6.0 comes from pyproject.toml - 0.6.0 is on PyPI,
+      # so there is nothing to install by hand.
       - name: Install the game
         working-directory: tui
         run: pip install -e ".[dev]"
