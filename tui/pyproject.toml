@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+# Prefixed for the same reason as magmacrunch-george-boole: PyPI has no
+# scoping like the npm @magmacrunch/… packages, and `adenosine` and `magnolia`
+# are both already taken there by other people. See ../../george-boole/tui/
+# PACKAGING.md for the plan this belongs to.
+name = "magmacrunch-thld"
+version = "0.1.0"
+description = "Texas Hold'Em Lava Dome — terminal version"
+readme = "README.md"
+license = "PolyForm-Noncommercial-1.0.0"
+requires-python = ">=3.10"
+authors = [{ name = "magmacrunch media" }]
+
+# The engine, with its terminal backend. lavadome/cards.py, handeval.py,
+# config.py, state.py, dome.py, betting.py and dealer.py depend on neither and
+# are importable on their own.
+dependencies = ["texastoast[tui]>=0.6.0"]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "ruff>=0.6"]
+
+[project.scripts]
+lava-dome = "lavadome.__main__:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["lavadome"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

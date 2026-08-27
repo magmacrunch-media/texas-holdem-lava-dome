@@ -1,0 +1,12 @@
+{
+  "name": "lavadome-test-oracle",
+  "private": true,
+  "type": "module",
+  "description": "Loads the real AdCards.HandEvaluator so the Python port can be checked against it. Not shipped — see ../README.md.",
+  "scripts": {
+    "check": "node js_oracle.mjs --check"
+  },
+  "dependencies": {
+    "@magmacrunch/adenosine-cards": "0.7.4"
+  }
+}

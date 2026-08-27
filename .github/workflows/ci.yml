@@ -15,6 +15,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # Lets CI be run against a branch without opening a pull request first.
+  workflow_dispatch:
 
 jobs:
   host-tests:
@@ -29,3 +31,73 @@ jobs:
       - name: make test
         working-directory: wii
         run: make test
+
+  # The rules and the evaluator in the terminal port's Python, with no engine
+  # installed. Two things make this the important job:
+  #
+  # lavadome/cards.py through betting.py claim to import nothing outside the
+  # standard library, and running them here with only pytest on the machine is
+  # what proves it.
+  #
+  # And this is where the differential test lives — the Python evaluator run
+  # against the real JavaScript over thousands of hands. It needs node, not
+  # texastoast. The web build has no test suite of its own, so this is the only
+  # thing standing in for one.
+  tui-rules:
+    name: tui rules (no engine)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - run: pip install pytest ruff
+
+      # The published arcade evaluator, for the differential test to compare
+      # against. There is one checkout here, so the vendored bundle in the
+      # website repo is not on disk — and the published package is the better
+      # reference anyway, being what actually ships.
+      - name: Install the JavaScript evaluator
+        working-directory: tui/tools
+        run: npm ci
+
+      - name: Confirm the oracle loaded
+        working-directory: tui/tools
+        run: node js_oracle.mjs --check
+
+      # LAVADOME_REQUIRE_ORACLE turns a missing oracle into a failure instead of
+      # letting the differential tests skip and report green — the same guard
+      # texastoast's conftest applies to a missing display.
+      - name: Rules and evaluator, with no engine on the machine
+        working-directory: tui
+        env:
+          LAVADOME_REQUIRE_ORACLE: "1"
+        run: python -m pytest tests/test_rules.py tests/test_handeval.py -q
+
+      - name: Lint
+        working-directory: tui
+        run: ruff check .
+
+  # The screens, which do need the engine and its terminal backend.
+  tui-screens:
+    name: tui screens
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # texastoast[tui]>=0.6.0 comes from pyproject.toml - 0.6.0 is on PyPI,
+      # so there is nothing to install by hand.
+      - name: Install the game
+        working-directory: tui
+        run: pip install -e ".[dev]"
+
+      - name: Screens
+        working-directory: tui
+        run: python -m pytest tests/test_app.py -q
