@@ -10,7 +10,20 @@ choose to bank chips — safe, and the bank is your score — or leave them in
 play for the next ante to eat.
 
 ```
-pip install -e .
+pipx install magmacrunch-thld
+lava-dome
+```
+
+`pipx` rather than `pip` because it puts the command on your PATH in
+its own virtualenv; plain `pip install` only reaches your PATH inside an
+activated venv. It is also a cabinet in the
+[magmacrunch](https://pypi.org/project/magmacrunch/) arcade — `pipx install magmacrunch`
+gets this and the other two — and plays identically either way.
+
+For working on it:
+
+```
+pip install -e ".[dev]"
 python -m lavadome        # or the installed `lava-dome` command
 ```
 
