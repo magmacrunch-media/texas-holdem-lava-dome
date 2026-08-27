@@ -30,3 +30,14 @@ description. Same method `web/js/config.js` records using when AdCards replaced
 this game's original evaluator.
 
 If you change hand evaluation anywhere, run that.
+
+## `tui/LICENSE` and `tui/NOTICE` are copies
+
+The originals are at the repo root, where they cover `web/` and `wii/` too.
+The copies exist because the wheel is built from `tui/` and PolyForm requires
+the notice to travel with the distribution — a wheel built from a subdirectory
+cannot reach a file above it, and `force-include` does not help because
+`python -m build` builds the wheel from an unpacked sdist that has no parent.
+
+**Relicensing means changing all three copies**, here and in
+`george-boole/tui/`. Nothing checks this automatically.
