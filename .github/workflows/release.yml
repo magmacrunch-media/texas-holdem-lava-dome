@@ -1,0 +1,94 @@
+# Publishes the terminal version to PyPI as `magmacrunch-thld`.
+#
+# Only `tui/` ships. `web/` is deployed by the website repo and `wii/` is a
+# .dol you build yourself, so a tag here releases one of the three versions in
+# this repo and the tag says which: `tui-v0.1.0`, not `v0.1.0`. That prefix
+# leaves room for the other two to grow their own release paths later without
+# a tag namespace collision.
+#
+# Trusted Publishing: GitHub mints a short-lived identity token that PyPI
+# verifies against a publisher configured for this repo. No API token, no
+# repository secret, nothing to rotate. The publisher has to exist on PyPI
+# before the first run — for a project that does not exist yet that means a
+# "pending publisher" (pypi.org → Your account → Publishing), naming this
+# repository and this workflow file.
+
+name: Release
+
+on:
+  push:
+    tags: ["tui-v*"]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # A tag that disagrees with the packaged version publishes something
+      # nobody can find again. Cheaper to fail here than to yank a release.
+      - name: Verify the tag matches the package version
+        if: startsWith(github.ref, 'refs/tags/')
+        working-directory: tui
+        run: |
+          TAG="${GITHUB_REF_NAME#tui-v}"
+          PKG=$(python -c "import tomllib,pathlib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])")
+          if [ "$TAG" != "$PKG" ]; then
+            echo "Tag $TAG does not match pyproject version $PKG"
+            exit 1
+          fi
+
+      # The suite that needs no engine, and the one that does. A release is the
+      # worst moment to find out the rules regressed, and CI does not run on
+      # tags.
+      - name: Test
+        working-directory: tui
+        run: |
+          pip install -e ".[dev]"
+          python -m pytest -q
+          ruff check .
+
+      - run: pip install build twine
+      - name: Build
+        working-directory: tui
+        run: python -m build
+
+      # PolyForm requires the notice to travel with the distribution, and the
+      # licence lives at the repo root where it also covers web/ and wii/.
+      # tui/LICENSE and tui/NOTICE are copies kept for this reason — see
+      # AGENTS.md. Assert they made it in rather than trusting they did.
+      - name: The licence is in the wheel
+        working-directory: tui
+        run: |
+          python - <<'PY'
+          import glob, zipfile
+          wheel = glob.glob("dist/*.whl")[0]
+          names = zipfile.ZipFile(wheel).namelist()
+          for want in ("LICENSE", "NOTICE"):
+              assert any(n.endswith(f"licenses/{want}") for n in names), \
+                  f"{want} missing from {wheel}"
+          print("licence and notice present")
+          PY
+
+      - name: Check
+        working-directory: tui
+        run: twine check dist/*
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: tui/dist
+          skip-existing: true
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create ${{ github.ref_name }} --generate-notes
