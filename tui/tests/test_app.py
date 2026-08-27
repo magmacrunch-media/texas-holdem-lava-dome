@@ -12,25 +12,39 @@ import pytest
 
 pytest.importorskip("textual", reason='needs: pip install -e ".[dev]" with texastoast[tui]')
 
+from texastoast.core.tui_host import TuiHost  # noqa: E402
+
 from lavadome import config, theme  # noqa: E402
 from lavadome.app import LavaDomeApp  # noqa: E402
+from lavadome.arcade import GAME  # noqa: E402
 from lavadome.cards import Card  # noqa: E402
 from lavadome.scenes import GameScene, RulesScene, TitleScene  # noqa: E402
 
 
 def buffer_text(app: LavaDomeApp) -> str:
-    return app.game.surface.buffer.to_text()
+    return app.host.game.surface.buffer.to_text()
 
 
 def settle(app: LavaDomeApp) -> None:
     """Apply the stack's pending push/pop, which the engine defers a frame."""
-    app.stack.update(0.0)
+    app.host.stack.update(0.0)
+
+
+def hosted(seed=2024) -> LavaDomeApp:
+    """A session on a real host, built the way the standalone command does."""
+    host = TuiHost(title=GAME.info.title, fps=GAME.info.fps,
+                   hold_ms=GAME.info.hold_ms)
+    app = LavaDomeApp(host, seed=seed)
+    host.push_scene(app.root_scene)
+    settle(app)
+    return app
 
 
 def game_app(seed=2024) -> tuple[LavaDomeApp, GameScene]:
-    app = LavaDomeApp(seed=seed, skip_title=True)
+    app = hosted(seed)
+    app.start_run()
     settle(app)
-    return app, app.stack.top
+    return app, app.host.scene
 
 
 def hand(*specs: str) -> list[Card]:
@@ -41,8 +55,8 @@ def hand(*specs: str) -> list[Card]:
 async def _piloted(app: LavaDomeApp, size=(80, 24)):
     from texastoast.core.tui_game import _GameApp
 
-    textual_app = _GameApp(app.game, app.game.surface)
-    app.game._app = textual_app
+    textual_app = _GameApp(app.host.game, app.host.game.surface)
+    app.host.game._app = textual_app
     return textual_app.run_test(size=size)
 
 
@@ -54,46 +68,43 @@ def run(coro):
 
 
 def test_the_title_screen_is_the_bottom_of_the_stack():
-    app = LavaDomeApp(seed=1)
-    settle(app)
-    assert isinstance(app.stack.top, TitleScene)
+    app = hosted(seed=1)
+    assert isinstance(app.host.scene, TitleScene)
     assert not app.in_game
 
 
 def test_descending_pushes_a_run_over_the_title():
-    app = LavaDomeApp(seed=1)
-    settle(app)
-    app.stack.top.handle_key("enter")
+    app = hosted(seed=1)
+    app.host.scene.handle_key("enter")
     settle(app)
     assert app.in_game
-    assert len(app.stack) == 2
-    assert isinstance(app.stack.scenes[0], TitleScene)
+    assert len(app.host.stack) == 2
+    assert isinstance(app.host.stack.scenes[0], TitleScene)
 
 
 def test_escape_returns_to_the_title():
     app, scene = game_app()
     scene.handle_key("escape")
     settle(app)
-    assert isinstance(app.stack.top, TitleScene)
+    assert isinstance(app.host.scene, TitleScene)
 
 
 def test_the_title_menu_works_again_after_a_run_is_popped():
-    app = LavaDomeApp(seed=1)
+    app = hosted(seed=1)
+    app.host.scene.handle_key("enter")
     settle(app)
-    app.stack.top.handle_key("enter")
+    app.host.scene.handle_key("escape")
     settle(app)
-    app.stack.top.handle_key("escape")
-    settle(app)
-    assert app.stack.top.menu.active
+    assert app.host.scene.menu.active
 
 
 def test_the_rules_screen_pushes_over_a_run_and_any_key_dismisses_it():
     app, scene = game_app()
     scene.handle_key("h")
     settle(app)
-    assert isinstance(app.stack.top, RulesScene)
+    assert isinstance(app.host.scene, RulesScene)
 
-    app.stack.top.handle_key("x")
+    app.host.scene.handle_key("x")
     settle(app)
     assert app.in_game
 
@@ -107,12 +118,12 @@ def test_the_key_that_dismisses_the_rules_does_not_also_act_on_the_run():
     settle(app)
     chips = scene.state.chips
 
-    app.stack.dispatch_key("b")         # would place a bet if it reached
+    app.host.stack.dispatch_key("b")         # would place a bet if it reached
     settle(app)
     assert scene.state.chips == chips
     assert app.in_game                  # the rules screen is gone
 
-    app.stack.dispatch_key("b")         # now it reaches
+    app.host.stack.dispatch_key("b")         # now it reaches
     assert scene.state.chips < chips
 
 
@@ -120,10 +131,10 @@ def test_a_run_stops_receiving_frames_while_the_rules_are_on_top():
     app, scene = game_app()
     scene.handle_key("h")
     settle(app)
-    assert app.stack.top is not scene
+    assert app.host.scene is not scene
     # Modality is the stack: RulesScene sets no update_below, so the run
     # underneath is not in the update slice at all.
-    assert scene not in app.stack._slice("update_below")
+    assert scene not in app.host.stack._slice("update_below")
 
 
 # ── Round flow ──────────────────────────────────────────────────────
@@ -290,8 +301,7 @@ def test_a_seeded_run_is_reproducible():
 
 def test_the_title_screen_renders():
     async def go():
-        app = LavaDomeApp(seed=1)
-        settle(app)
+        app = hosted(seed=1)
         async with await _piloted(app) as pilot:
             await pilot.pause()
             await asyncio.sleep(0.25)
@@ -299,7 +309,7 @@ def test_the_title_screen_renders():
             assert theme.BANNER in text
             assert "DESCEND INTO THE DOME" in text
             assert "HOW TO PLAY" in text
-            app.game.quit()
+            app.host.quit()
 
     run(go())
 
@@ -316,7 +326,7 @@ def test_the_table_renders_cards_stats_and_actions():
             assert "CHIPS" in text
             assert "BANK" in text
             assert "DOME" in text
-            app.game.quit()
+            app.host.quit()
 
     run(go())
 
@@ -329,11 +339,11 @@ def test_glyphs_keep_the_background_of_the_card_they_sit_on():
         async with await _piloted(app) as pilot:
             await pilot.pause()
             await asyncio.sleep(0.25)
-            buf = app.game.surface.buffer
+            buf = app.host.game.surface.buffer
             holes = [(x, y) for y in range(buf.height) for x in range(buf.width)
                      if buf.get(x, y).char != " " and buf.get(x, y).bg is None]
             assert holes == []
-            app.game.quit()
+            app.host.quit()
 
     run(go())
 
@@ -351,7 +361,7 @@ def test_a_whole_hand_plays_through_real_keypresses():
             assert scene.resolution is not None
             text = buffer_text(app)
             assert ("BEAT THE DOME" in text) or ("THE DOME WINS" in text)
-            app.game.quit()
+            app.host.quit()
 
     run(go())
 
@@ -368,7 +378,7 @@ def test_the_ending_screen_renders():
             text = buffer_text(app)
             assert "YOU ESCAPED THE DOME" in text
             assert "1234" in text
-            app.game.quit()
+            app.host.quit()
 
     run(go())
 
@@ -384,7 +394,7 @@ def test_a_too_small_terminal_says_so_rather_than_clipping():
             await pilot.resize_terminal(theme.MIN_COLS - 1, theme.MIN_ROWS)
             await asyncio.sleep(0.25)
             assert "too small" in buffer_text(app)
-            app.game.quit()
+            app.host.quit()
 
     run(go())
 
@@ -405,7 +415,7 @@ def test_resizing_does_not_corrupt_the_layout():
                 assert app.renderer.width == width
                 for line in buffer_text(app).split("\n"):
                     assert len(line) <= width
-            app.game.quit()
+            app.host.quit()
 
     run(go())
 
@@ -498,7 +508,7 @@ def test_the_rules_screen_wraps_instead_of_clipping():
                 assert len(lines) <= height
                 for line in lines:
                     assert len(line) <= width, f"overflow at {width}x{height}"
-            app.game.quit()
+            app.host.quit()
 
     run(go())
 
@@ -514,7 +524,7 @@ def test_the_rules_screen_always_keeps_its_way_out():
                 await pilot.resize_terminal(width, height)
                 await asyncio.sleep(0.2)
                 assert "any key to go back" in buffer_text(app)
-            app.game.quit()
+            app.host.quit()
 
     run(go())
 
@@ -534,6 +544,120 @@ def test_the_payout_table_is_all_there_or_not_at_all():
                 for name in config.PAYOUT_MULTIPLIERS:
                     if name != "High Card":
                         assert name in text, f"{name} missing from the payouts"
-            app.game.quit()
+            app.host.quit()
 
     run(go())
+
+
+# ── Launchable by an arcade ─────────────────────────────────────────
+#
+# The game has to work two ways: as its own command, and seated by a launcher
+# that owns the terminal. The difference must be invisible to the game.
+
+
+class _Blank:
+    """Stands in for whatever a launcher would have underneath a game."""
+
+    def update(self, dt):
+        pass
+
+    def render(self):
+        pass
+
+
+def test_the_entry_point_object_is_a_valid_arcade_game():
+    from texastoast.arcade import ArcadeGame
+
+    assert isinstance(GAME, ArcadeGame)
+
+
+def test_the_declared_info_matches_what_the_game_actually_needs():
+    assert GAME.info.key == "thld"
+    assert GAME.info.min_cols == theme.MIN_COLS
+    assert GAME.info.min_rows == theme.MIN_ROWS
+    # Turn-based: edge input, or one arrow press runs the bet across the stack.
+    assert GAME.info.hold_ms == 0
+
+
+def test_starting_returns_a_scene_without_pushing_it():
+    host = TuiHost(title="t", fps=20)
+    scene = GAME.start(host)
+    host.stack.update(0)
+    assert isinstance(scene, TitleScene)
+    assert host.scene is None, "start() must leave the pushing to the caller"
+
+
+def test_a_launcher_can_seat_the_game_over_its_own_menu():
+    host = TuiHost(title="arcade", fps=20)
+    arcade_menu = _Blank()
+    host.push_scene(arcade_menu)
+    host.seat(GAME)
+    host.stack.update(0)
+    assert isinstance(host.scene, TitleScene)
+
+    host.scene.handle_key("escape")
+    host.stack.update(0)
+    assert host.scene is arcade_menu
+
+
+def test_escape_from_the_title_ends_a_standalone_session():
+    host = TuiHost(title="t", fps=20)
+    quit_calls = []
+    host.quit = lambda: quit_calls.append(1)
+    host.seat(GAME)
+    host.stack.update(0)
+
+    host.scene.handle_key("escape")
+    assert quit_calls == [1]
+
+
+def test_seating_applies_the_declared_frame_rate_and_input():
+    from texastoast.core.loop import GameLoop
+    from texastoast.core.scheduler import ManualScheduler
+
+    host = TuiHost(title="t", fps=60, hold_ms=999)
+    host._game._loop = GameLoop(ManualScheduler(), lambda dt: None,
+                                lambda: None, fps=60)
+    host.seat(GAME)
+    assert round(host.game.loop.target_fps) == GAME.info.fps
+    assert host.input.hold_ms == GAME.info.hold_ms
+
+
+def test_a_seated_game_deals_a_hand():
+    host = TuiHost(title="t", fps=20)
+    host.push_scene(_Blank())
+    host.seat(GAME)
+    host.stack.update(0)
+
+    host.scene.handle_key("enter")          # descend into the dome
+    host.stack.update(0)
+    assert isinstance(host.scene, GameScene)
+
+    scene = host.scene
+    assert len(scene.state.hole_cards) == 2
+    scene.handle_key("b")
+    for _ in range(3):
+        scene.handle_key("space")
+    assert scene.resolution is not None
+
+
+def test_the_rules_screen_still_returns_to_the_title_under_a_launcher():
+    # Three deep: arcade menu, title, rules. Each pop goes back one.
+    host = TuiHost(title="arcade", fps=20)
+    arcade_menu = _Blank()
+    host.push_scene(arcade_menu)
+    host.seat(GAME)
+    host.stack.update(0)
+    title = host.scene
+
+    host.scene.handle_key("h")
+    host.stack.update(0)
+    assert isinstance(host.scene, RulesScene)
+
+    host.scene.handle_key("x")
+    host.stack.update(0)
+    assert host.scene is title
+
+    host.scene.handle_key("escape")
+    host.stack.update(0)
+    assert host.scene is arcade_menu

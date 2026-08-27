@@ -100,7 +100,7 @@ class TitleScene:
         elif index == 1:
             self.app.show_rules()
         else:
-            self.app.game.quit()
+            self.app.host.quit()
 
     def on_resume(self) -> None:
         # Menu.confirm() hides the menu as it fires, so the screen underneath
@@ -115,7 +115,12 @@ class TitleScene:
         elif key in ("enter", "space"):
             self.menu.confirm()
         elif key == "q":
-            self.app.game.quit()
+            self.app.host.quit()
+        elif key == "escape":
+            # Leave the game, not the process. Standalone this is the last
+            # scene and the session ends; under a launcher the arcade menu is
+            # underneath and this returns to it. Same call either way.
+            self.app.pop_scene()
         elif key == "h":
             self.app.show_rules()
         else:
@@ -283,7 +288,7 @@ class GameScene:
 
     def handle_key(self, key: str) -> bool:
         if key == "q":
-            self.app.game.quit()
+            self.app.host.quit()
             return True
         if key == "h":
             self.app.show_rules()
