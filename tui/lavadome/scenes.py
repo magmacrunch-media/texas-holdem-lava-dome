@@ -57,19 +57,41 @@ def _menu_theme():
     )
 
 
-def _draw_title(renderer, cx: int) -> int:
-    """The name, as big as the window allows. Returns the row below it.
+def _menu_box_top(renderer) -> int:
+    """The row the title-screen menu's box starts on.
 
-    Block letters when there is room, the plain banner when there is not — the
-    title screen has a menu under it and a title that pushed it off a short
-    terminal would be a title nobody could get past. See
-    :mod:`texastoast.ui.bigtext` for why lettering has to be drawn at all.
+    The engine's ``Menu`` centres itself vertically in the surface, so the room
+    a title has is not "the height minus everything else" - it is everything
+    above where the box lands, and that moves as the window resizes. Working it
+    out rather than reserving a fixed number of rows is what stops a tall
+    terminal from drawing a title the menu then paints over. The menu here is
+    shown without a heading, so its title row is not in the sum.
     """
-    if (bigtext.fits(theme.BIG_TITLE, renderer.width - 2)
-            and renderer.height >= theme.BIG_TITLE_MIN_ROWS):
-        for row, line in enumerate(bigtext.lines(theme.BIG_TITLE)):
-            renderer.ui_text(cx, 1 + row, line, fill=theme.TITLE, anchor="n")
-        return 1 + bigtext.GLYPH_H
+    rows = len(TitleScene.ITEMS) * theme.MENU_ITEM_H + 2 * theme.MENU_PAD
+    return (renderer.height - rows) // 2 - theme.MENU_BORDER
+
+
+def _draw_title(renderer, cx: int) -> int:
+    """The name, set as large as the window allows. Returns the row below it.
+
+    Every rung shows the *whole* name - a title that fits by dropping half of
+    itself is not the title. The last rung is the plain banner, which is the
+    whole name in one line of text, so a short terminal loses the lettering
+    and never the name. See :mod:`texastoast.ui.bigtext`.
+    """
+    budget = _menu_box_top(renderer) - 1
+    for big, rest in theme.TITLE_LADDER:
+        needed = bigtext.height(big) + (1 if rest else 0)
+        if bigtext.width(big) > renderer.width - 2 or needed > budget:
+            continue
+        y = 1
+        for line in bigtext.lines(big):
+            renderer.ui_text(cx, y, line, fill=theme.TITLE, anchor="n")
+            y += 1
+        if rest:
+            renderer.ui_text(cx, y, rest, fill=theme.MENU_SELECTED, anchor="n")
+            y += 1
+        return y
     renderer.ui_text(cx, 1, theme.BANNER, fill=theme.TITLE, anchor="n")
     return 2
 

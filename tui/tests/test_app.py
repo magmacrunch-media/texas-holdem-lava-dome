@@ -307,7 +307,10 @@ def test_the_title_screen_renders():
             await pilot.pause()
             await asyncio.sleep(0.25)
             text = buffer_text(app)
-            assert bigtext.lines(theme.BIG_TITLE)[0] in text
+            # Both halves of the name, drawn, broken the way the website
+            # breaks it: TEXAS HOLD'EM over LAVA DOME.
+            assert bigtext.lines("TEXAS HOLD'EM")[0].strip() in text
+            assert bigtext.lines("LAVA DOME")[0].strip() in text
             assert theme.SUBTITLE in text
             assert "DESCEND INTO THE DOME" in text
             assert "HOW TO PLAY" in text
@@ -327,18 +330,25 @@ def test_a_short_terminal_gets_the_plain_banner_instead_of_block_letters():
             await asyncio.sleep(0.25)
             text = buffer_text(app)
             assert theme.BANNER in text
-            assert bigtext.lines(theme.BIG_TITLE)[0] not in text
+            assert bigtext.lines("LAVA DOME")[0].strip() not in text
             assert "DESCEND INTO THE DOME" in text, "the menu is still reachable"
             app.host.quit()
 
     run(go())
 
 
-def test_the_block_title_is_the_dome_not_the_whole_name():
-    """The full banner would be 114 columns in block letters. The part worth
-    shouting is the dome."""
+def test_every_rung_of_the_ladder_spells_the_whole_name():
+    """A title that fits by dropping half of itself is not the title."""
+    for big, rest in theme.TITLE_LADDER:
+        spelled = (big.replace('\n', " ") + " " + rest).split()
+        assert spelled == theme.BANNER.split(), f"{big!r} + {rest!r}"
+
+
+def test_the_break_is_what_makes_the_name_fit():
+    """On one line the name is 114 columns in block letters. On two it is 64,
+    which is why the website breaks it and why this does."""
     assert bigtext.width(theme.BANNER) > 100
-    assert bigtext.fits(theme.BIG_TITLE, 78)
+    assert bigtext.fits(theme.TITLE_LADDER[0][0], 78, rows=6)
 
 
 def test_the_table_renders_cards_stats_and_actions():

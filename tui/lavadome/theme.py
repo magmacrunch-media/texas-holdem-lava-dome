@@ -60,10 +60,21 @@ CARD_GAP = 1
 BANNER = "TEXAS HOLD'EM LAVA DOME"
 SUBTITLE = "solo hold'em against an escalating threshold"
 
-#: Drawn in :mod:`texastoast.ui.bigtext` when there is room. The block face
-#: carries "LAVA DOME" rather than the full name: the whole banner would be
-#: 114 columns in block letters, and the part worth shouting is the dome.
-BIG_TITLE = "LAVA DOME"
+#: How the name is set, best first: the block text, and whatever is left of
+#: the name in plain text beneath it. The whole name is on screen in every
+#: rung — what changes is how much of it is drawn rather than typed.
+#:
+#: The break comes from magmacrunch.com, where both the card-games card and
+#: the game's own heading set it as ``TEXAS HOLD'EM<br>LAVA DOME``. On one
+#: line it would be 114 columns in block letters; on two it is 64.
+#: There is deliberately no "LAVA DOME alone" rung. The subtitle sits *below*
+#: the block, so a rung setting only the second half would have to drop
+#: "TEXAS HOLD'EM" or print it out of order — and a name that fits by losing
+#: half of itself is not the name. Anything too small for the block gets
+#: :data:`BANNER`, which is the whole name in one line of text.
+TITLE_LADDER = (
+    ("TEXAS HOLD'EM\nLAVA DOME", ""),
+)
 
 # ── Layout ──────────────────────────────────────────────────────────
 
@@ -86,11 +97,6 @@ MIN_ROWS = ACTIONS_Y + 3
 
 MENU_MIN_COLS = 46
 MENU_MIN_ROWS = 16
-
-#: The block title costs two rows more than the plain one. Below this the
-#: plain banner is drawn instead, which is what keeps the screen usable at
-#: MENU_MIN_ROWS.
-BIG_TITLE_MIN_ROWS = MENU_MIN_ROWS + 3
 
 MENU_W = 30
 MENU_ITEM_H = 1
