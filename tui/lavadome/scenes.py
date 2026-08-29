@@ -16,9 +16,9 @@ import textwrap
 from dataclasses import replace
 
 from magmacrunch.engine import scores as scoring
-from magmacrunch.engine.ui.theme import DEFAULT_THEME
-from magmacrunch.engine.ui.menu import Menu
 from magmacrunch.engine.ui import bigtext
+from magmacrunch.engine.ui.menu import Menu
+from magmacrunch.engine.ui.theme import DEFAULT_THEME
 
 from lavadome import config, theme
 from lavadome.betting import Betting
