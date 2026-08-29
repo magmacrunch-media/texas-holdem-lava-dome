@@ -8,7 +8,7 @@ build-backend = "hatchling.build"
 # are both already taken there by other people. See ../../george-boole/tui/
 # PACKAGING.md for the plan this belongs to.
 name = "magmacrunch-thld"
-version = "0.1.1"
+version = "0.2.0"
 description = "Texas Hold'Em Lava Dome — terminal version"
 readme = "README.md"
 license = "PolyForm-Noncommercial-1.0.0"
