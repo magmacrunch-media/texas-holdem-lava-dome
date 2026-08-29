@@ -27,6 +27,17 @@ from lavadome.dome import Dome
 from lavadome.handeval import HandEvaluator
 from lavadome.state import GameState
 
+MENU_HELP = "↑↓ choose    Enter select    Q quit"
+
+#: Shown under the key hints, and only when a launcher seated this game.
+#:
+#: Esc at this screen calls the same "take me back" as ever — what changes is
+#: where back is. Seated, it is the arcade floor; launched on its own, it ends
+#: the session, which Q already says. So the key needs describing in exactly
+#: one of the two situations, and until this line existed a player under the
+#: arcade had no way to discover the route back at all.
+ARCADE_HELP = "Esc  back to the arcade"
+
 #: Paragraphs, not lines. They are wrapped to the terminal at render time —
 #: hardcoding the breaks makes the screen correct at exactly one width and
 #: clipped at every narrower one.
@@ -191,8 +202,10 @@ class TitleScene:
         if self.app.best_bank:
             r.ui_text(cx, r.height - 3, f"best bank: {self.app.best_bank}",
                       fill=theme.PANEL_LABEL, anchor="n")
-        r.ui_text(cx, r.height - 2, "↑↓ choose    Enter select    Q quit",
-                  fill=theme.DIM, anchor="n")
+        r.ui_text(cx, r.height - 2, MENU_HELP, fill=theme.DIM, anchor="n")
+        if self.app.host.seated:
+            r.ui_text(cx, r.height - 1, ARCADE_HELP, fill=theme.DIM,
+                      anchor="n")
         r.present()
 
 

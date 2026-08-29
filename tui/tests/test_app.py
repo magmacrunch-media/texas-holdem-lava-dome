@@ -813,3 +813,31 @@ def test_the_table_shows_the_run_and_how_it_ended():
             app.host.quit()
 
     run(go())
+
+
+# ── Saying where Esc goes ───────────────────────────────────────────
+
+
+def _seated():
+    """The cabinet seated over a floor, the way the arcade does it."""
+    host = TuiHost(title="arcade", fps=20)
+    floor = _Blank()
+    host.push_scene(floor)
+    host.stack.update(0)
+    host.seat(GAME)
+    host.stack.update(0)
+    return host, floor
+
+
+def test_a_seated_cabinet_says_how_to_get_back():
+    host, _ = _seated()
+    host.scene.render()
+    assert scenes.ARCADE_HELP in host.game.surface.buffer.to_text()
+
+
+def test_a_game_launched_on_its_own_does_not_promise_an_arcade():
+    # The same screen, the same key, a different truth: Esc ends the session
+    # here, and Q already says so.
+    app = hosted()
+    app.host.scene.render()
+    assert scenes.ARCADE_HELP not in buffer_text(app)

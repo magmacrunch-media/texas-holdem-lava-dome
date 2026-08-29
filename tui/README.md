@@ -50,6 +50,7 @@ The import package stays plain `lavadome`.
 | `W` | withdraw from the bank |
 | `N` / `E` | next round / escape with what you banked |
 | `H`, `Esc`, `Q` | help, back, quit |
+| `Esc` (title screen) | back to the arcade, when the arcade started this |
 
 A raise buys the next card, so a hand holds four betting decisions and never
 more. That is the web build's behaviour and the Wii port's; letting a raise
