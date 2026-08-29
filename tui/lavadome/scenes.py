@@ -15,6 +15,7 @@ from __future__ import annotations
 import textwrap
 from dataclasses import replace
 
+from texastoast import scores as scoring
 from texastoast.ui import DEFAULT_THEME, Menu, bigtext
 
 from lavadome import config, theme
@@ -111,7 +112,8 @@ def _too_small(renderer, cols: int, rows: int) -> bool:
 class TitleScene:
     """Landing screen."""
 
-    ITEMS = ("DESCEND INTO THE DOME", "HOW TO PLAY", "QUIT")
+    ITEMS = ("DESCEND INTO THE DOME", "HIGH SCORES", "HOW TO PLAY",
+             "QUIT")
 
     def __init__(self, app):
         self.app = app
@@ -137,6 +139,8 @@ class TitleScene:
         if index == 0:
             self.app.start_run()
         elif index == 1:
+            self.app.show_scores()
+        elif index == 2:
             self.app.show_rules()
         else:
             self.app.host.quit()
@@ -187,6 +191,126 @@ class TitleScene:
                       fill=theme.PANEL_LABEL, anchor="n")
         r.ui_text(cx, r.height - 2, "↑↓ choose    Enter select    Q quit",
                   fill=theme.DIM, anchor="n")
+        r.present()
+
+
+class InitialsScene:
+    """Who just left the dome. Over the ending, not instead of it."""
+
+    render_below = True
+
+    def __init__(self, app, wealth: int, rounds: int = 0,
+                 escaped: bool = False):
+        self.app = app
+        self.wealth = wealth
+        self.rounds = rounds
+        self.escaped = escaped
+        self.typed = ""
+
+    def handle_key(self, key: str) -> bool:
+        if key == "backspace":
+            self.typed = self.typed[:-1]
+        elif key in ("enter", "space", "escape"):
+            # Escape records under the last-used initials rather than throwing
+            # the run away. A score is a fact; the initials label it.
+            self.app.record(self.wealth, self.typed or None,
+                            rounds=self.rounds, escaped=self.escaped)
+            self.app.host.pop_scene()
+        elif len(key) == 1 and key.isalnum():
+            if len(self.typed) < scoring.INITIALS_LENGTH:
+                self.typed += key.upper()
+        else:
+            return False
+        return True
+
+    def update(self, dt: float) -> None:
+        pass
+
+    def render(self) -> None:
+        r = self.app.renderer
+        cx, cy = r.width // 2, r.height // 2
+        box_w = min(r.width - 4, 40)
+        r.draw_rect(cx - box_w // 2, cy - 3, box_w, 7, theme.MENU_BOX)
+        r.ui_text(cx, cy - 2, "A NEW HIGH SCORE", fill=theme.MENU_SELECTED,
+                  anchor="n")
+        r.ui_text(cx, cy - 1, f"{self.wealth} after {self.rounds} rounds",
+                  fill=theme.PANEL_VALUE, anchor="n")
+        slots = self.typed.ljust(scoring.INITIALS_LENGTH, "_")
+        r.ui_text(cx, cy + 1, "  ".join(slots), fill=theme.MENU_SELECTED,
+                  anchor="n")
+        r.ui_text(cx, cy + 2, "Enter confirms    Backspace fixes",
+                  fill=theme.DIM, anchor="n")
+        r.present()
+
+
+class ScoresScene:
+    """The table. Total wealth, rounds survived, and whether they got out."""
+
+    def __init__(self, app):
+        self.app = app
+        self.offset = 0
+
+    def handle_key(self, key: str) -> bool:
+        if key in ("up", "w", "k"):
+            self.offset = max(0, self.offset - 1)
+        elif key in ("down", "s", "j"):
+            self.offset = min(self._max_offset(), self.offset + 1)
+        else:
+            self.app.pop_scene()
+        return True
+
+    def update(self, dt: float) -> None:
+        pass
+
+    def _viewport(self) -> int:
+        return max(1, self.app.renderer.height - 5)
+
+    def _max_offset(self) -> int:
+        return max(0, len(self.app.scores.load()) - self._viewport())
+
+    def render(self) -> None:
+        r = self.app.renderer
+        r.clear()
+        r.draw_rect(0, 0, r.width, r.height, theme.BG)
+        if _too_small(r, theme.MENU_MIN_COLS, theme.MENU_MIN_ROWS):
+            r.present()
+            return
+
+        entries = self.app.scores.load()
+        viewport = self._viewport()
+        self.offset = min(self.offset, max(0, len(entries) - viewport))
+        r.ui_text(r.width // 2, 1, "HIGH SCORES", fill=theme.TITLE, anchor="n")
+
+        if not entries:
+            r.ui_text(r.width // 2, r.height // 2, "no scores yet",
+                      fill=theme.DIM, anchor="n")
+            r.ui_text(r.width // 2, r.height // 2 + 1,
+                      "descend and come back", fill=theme.DIM, anchor="n")
+            r.ui_text(theme.MARGIN_X, r.height - 2, "any key goes back",
+                      fill=theme.DIM)
+            r.present()
+            return
+
+        left = max(2, r.width // 2 - 17)
+        y = 3
+        for i, entry in enumerate(entries[self.offset:self.offset + viewport],
+                                  start=self.offset + 1):
+            if y >= r.height - 2:
+                break
+            rounds = entry.extra.get("rounds", 0)
+            escaped = entry.extra.get("escaped")
+            r.ui_text(left, y, f"{i:>3}. {entry.initials}",
+                      fill=theme.PANEL_VALUE)
+            r.ui_text(left + 10, y, f"{entry.score:>7}", fill=theme.MENU_SELECTED)
+            r.ui_text(left + 19, y, f"r{rounds}", fill=theme.PANEL_LABEL)
+            r.ui_text(left + 24, y, "escaped" if escaped else "burned",
+                      fill=theme.WIN if escaped else theme.LOSE)
+            y += 1
+
+        more = len(entries) - (self.offset + viewport)
+        hint = ("↑↓ scroll    any other key goes back"
+                if (more > 0 or self.offset) else "any key goes back")
+        r.ui_text(theme.MARGIN_X, r.height - 2, hint, fill=theme.DIM)
         r.present()
 
 
@@ -287,8 +411,17 @@ class GameScene:
         self._refresh_preview()
 
     def _end(self, result: dict) -> None:
+        """The run is over, either way out of the dome.
+
+        record_bank keeps the in-run peak for the HUD; finish is what puts a
+        run on the board, and it is called here and nowhere else — chips still
+        in play are not yours until a run ends.
+        """
         self.ending = result
         self.app.record_bank(self.state.bank)
+        self.app.finish(self.state.total_wealth,
+                        rounds=self.state.round,
+                        escaped=bool(result.get("escaped")))
 
     @property
     def over(self) -> bool:

@@ -18,20 +18,35 @@ from __future__ import annotations
 import random
 from typing import Any
 
+from texastoast.scores import ScoreBook
+
 from lavadome.scenes import GameScene, RulesScene, TitleScene
 
 
 class LavaDomeApp:
     """A session of Lava Dome, drawing on somebody else's terminal."""
 
+    #: The key the browser build posts under. Not "thld" — the web has filed
+    #: this under solitaire-thld since before the rename, and a shared board
+    #: later has to mean a shared board rather than two with different names.
+    SCORE_KEY = "solitaire-thld"
+
     def __init__(self, host: Any, seed: int | None = None,
-                 ascii_only: bool = False):
+                 ascii_only: bool = False, scores: ScoreBook | None = None):
         self.host = host
         self.rng = random.Random(seed)
         self.seed = seed
         self.ascii_only = ascii_only
-        #: Best bank reached, for as long as this session lasts.
+
+        #: The high score table, on disk and outliving the session.
+        self.scores = scores or ScoreBook(self.SCORE_KEY)
+        #: Best bank reached *this run*, for the HUD. Not the record — that is
+        #: on the board, and only what you leave the dome with goes on it.
         self.best_bank = 0
+        #: What the player last typed, so a second run does not ask again.
+        self.initials = "AAA"
+        #: Where the last recorded run landed, for the ending screen.
+        self.last_rank: int | None = None
 
         #: The title screen. The caller pushes it — a game that pushed its own
         #: scene would take that decision away from whatever is seating it.
@@ -68,7 +83,62 @@ class LavaDomeApp:
         self.host.pop_scene()
 
     def record_bank(self, amount: int) -> None:
+        """Track the highest the bank has been *within* this run.
+
+        Not a score. It moves every time a hand resolves, and what goes on the
+        board is what you actually leave with — see :meth:`finish`.
+        """
         self.best_bank = max(self.best_bank, amount)
+
+    @property
+    def best(self) -> int:
+        """The best run on record, not just this session's."""
+        return self.scores.best()
+
+    def qualifies(self, wealth: int) -> bool:
+        return wealth > 0 and self.scores.qualifies(wealth)
+
+    def finish(self, wealth: int, rounds: int = 0, escaped: bool = False) -> None:
+        """The run is over. Ask about it, or just record it.
+
+        The moment that counts is leaving the dome, not losing a hand. Both
+        ways out reach here: escaping banks the chips, and busting on the ante
+        keeps whatever was banked already.
+
+        **What is recorded is total wealth, not the bank**, because that is
+        what the browser build files under this key —
+        ``totalScore: this.totalWealth`` in js/state.js, which is
+        ``chips + bank``. At the end of a run the two agree, since escaping
+        banks the chips and busting leaves none; but recording the other one
+        would put a different quantity on a shared board under the same name,
+        which is the kind of thing nobody notices until the numbers are wrong.
+        """
+        if self.qualifies(wealth):
+            self.enter_initials(wealth, rounds, escaped)
+        elif wealth > 0:
+            self.record(wealth, rounds=rounds, escaped=escaped)
+
+    def record(self, wealth: int, initials: str | None = None,
+               rounds: int = 0, escaped: bool = False):
+        """Put a run on the board, with the extras the browser also keeps."""
+        self.initials = initials or self.initials
+        result = self.scores.save(self.initials, wealth,
+                                  rounds=rounds, escaped=escaped)
+        self.last_rank = result.rank
+        return result
+
+    def show_scores(self) -> None:
+        """The high score table, over the title screen."""
+        from lavadome.scenes import ScoresScene
+
+        self.host.push_scene(ScoresScene(self))
+
+    def enter_initials(self, wealth: int, rounds: int = 0,
+                       escaped: bool = False) -> None:
+        """Ask who just did that, over the ending."""
+        from lavadome.scenes import InitialsScene
+
+        self.host.push_scene(InitialsScene(self, wealth, rounds, escaped))
 
     # ── Introspection, for tests ────────────────────────────────────
 

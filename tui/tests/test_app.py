@@ -12,14 +12,29 @@ import pytest
 
 pytest.importorskip("textual", reason='needs: pip install -e ".[dev]" with texastoast[tui]')
 
+from texastoast import scores as score_mod  # noqa: E402
 from texastoast.core.tui_host import TuiHost  # noqa: E402
 from texastoast.ui import bigtext  # noqa: E402
 
-from lavadome import config, theme  # noqa: E402
+from lavadome import (  # noqa: E402
+    config,
+    scenes,  # noqa: E402
+    theme,
+)
 from lavadome.app import LavaDomeApp  # noqa: E402
 from lavadome.arcade import GAME  # noqa: E402
 from lavadome.cards import Card  # noqa: E402
 from lavadome.scenes import GameScene, RulesScene, TitleScene  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def isolated_scores(tmp_path, monkeypatch):
+    """No test may touch a real player's score file.
+
+    Autouse rather than opt-in: a suite that can quietly delete somebody's high
+    scores is not one you want to run twice.
+    """
+    monkeypatch.setenv(score_mod.DATA_DIR_ENV, str(tmp_path))
 
 
 def buffer_text(app: LavaDomeApp) -> str:
@@ -698,3 +713,103 @@ def test_the_rules_screen_still_returns_to_the_title_under_a_launcher():
     host.scene.handle_key("escape")
     host.stack.update(0)
     assert host.scene is arcade_menu
+
+# ── High scores ─────────────────────────────────────────────────────
+
+
+def test_the_board_is_filed_under_the_key_the_browser_uses():
+    """solitaire-thld, not thld: the web has filed it that way since before
+    the rename, and a shared board later has to mean a shared board."""
+    assert LavaDomeApp.SCORE_KEY == "solitaire-thld"
+
+
+def test_what_goes_on_the_board_is_total_wealth_not_the_bank():
+    """js/state.js records totalScore: this.totalWealth, which is chips plus
+    bank. Recording the other one would put a different quantity under the
+    same name — the kind of thing nobody notices until the numbers are wrong."""
+    app, scene = game_app()
+    scene.state.bank = 300
+    scene.state.chips = 45
+    scene._end({"escaped": True})
+    settle(app)
+    if not app.in_game:
+        app.host.scene.handle_key("enter")
+        settle(app)
+    assert app.scores.best() == 345
+
+
+def test_a_run_records_the_rounds_and_whether_they_got_out():
+    """The same two extras the browser keeps."""
+    app = hosted()
+    app.record(500, "jam", rounds=7, escaped=True)
+    assert app.scores.load()[0].extra == {"rounds": 7, "escaped": True}
+
+
+def test_the_score_survives_the_process(tmp_path):
+    from texastoast.scores import ScoreBook
+
+    book = ScoreBook(LavaDomeApp.SCORE_KEY, directory=tmp_path)
+    LavaDomeApp(TuiHost(title="t"), scores=book).record(900, "jam")
+
+    again = LavaDomeApp(TuiHost(title="t"),
+                        scores=ScoreBook(LavaDomeApp.SCORE_KEY,
+                                         directory=tmp_path))
+    assert again.best == 900
+
+
+def test_busting_records_what_was_already_banked():
+    """A run that busts on the ante keeps whatever it banked. Both ways out of
+    the dome reach finish()."""
+    app, scene = game_app()
+    scene.state.bank = 120
+    scene.state.chips = 0
+    scene._end({"bust": True})
+    settle(app)
+    if not app.in_game:
+        app.host.scene.handle_key("enter")
+        settle(app)
+    assert app.scores.best() == 120
+
+
+def test_leaving_with_nothing_is_not_worth_asking_about():
+    app, scene = game_app()
+    scene.state.bank = 0
+    scene.state.chips = 0
+    scene._end({"bust": True})
+    settle(app)
+    assert not isinstance(app.host.scene, scenes.InitialsScene)
+    assert app.scores.load() == []
+
+
+def test_the_in_run_peak_is_not_the_score():
+    """record_bank tracks the highest the bank got during a run, for the HUD.
+    Only what you leave with goes on the board."""
+    app, scene = game_app()
+    app.record_bank(9999)
+    assert app.best_bank == 9999
+    assert app.scores.load() == [], "the peak must not reach the board"
+
+
+def test_the_title_offers_the_table():
+    app = hosted()
+    assert app.host.scene.ITEMS == ("DESCEND INTO THE DOME", "HIGH SCORES",
+                                    "HOW TO PLAY", "QUIT")
+
+
+def test_the_table_shows_the_run_and_how_it_ended():
+    app = hosted()
+    app.scores.save("jam", 1250, rounds=9, escaped=True)
+    app.scores.save("cpr", 80, rounds=2, escaped=False)
+
+    async def go():
+        async with await _piloted(app) as pilot:
+            await pilot.pause()
+            app.show_scores()
+            settle(app)
+            await asyncio.sleep(0.3)
+            text = buffer_text(app)
+            assert "JAM" in text and "1250" in text
+            assert "escaped" in text and "burned" in text
+            app.host.quit()
+
+    run(go())
