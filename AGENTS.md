@@ -12,7 +12,7 @@ One game, three versions, one repo:
   restamping, raise-buys-a-card). Expects magnolia checked out beside this
   repo.
 
-- `tui/` — terminal version (texastoast engine, Python + its `[tui]` backend).
+- `tui/` — terminal version (the `magmacrunch.engine` TUI engine, Python).
   `python -m lavadome`. Has its own `README.md`, which records the deliberate
   differences it shares with the Wii port.
 

@@ -261,8 +261,8 @@ def test_the_oracle_is_available_when_ci_says_it_must_be():
 
     Skipping is right on a dev box with no node. In CI it would turn the one
     test that proves the port agrees with the original into a silent pass —
-    the same trap texastoast's conftest guards against with
-    TEXASTOAST_REQUIRE_TK.
+    the same trap texastoast's conftest guarded against with
+    TEXASTOAST_REQUIRE_TK, back when this game ran on that engine.
     """
     assert ORACLE_SOURCE is not None, (
         "LAVADOME_REQUIRE_ORACLE=1 but no JavaScript evaluator was found; "
@@ -323,7 +323,7 @@ def test_evaluation_needs_no_engine():
          "import sys; from lavadome.handeval import HandEvaluator; "
          "from lavadome.cards import Card; "
          "print(HandEvaluator().evaluate([Card('spades','A'), Card('hearts','A')]).name, "
-         "'texastoast' in sys.modules, 'textual' in sys.modules)"],
+         "'magmacrunch' in sys.modules, 'textual' in sys.modules)"],
         capture_output=True, text=True, timeout=60,
     )
     assert result.returncode == 0, result.stderr

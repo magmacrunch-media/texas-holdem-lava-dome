@@ -6,7 +6,7 @@ build has no test suite of its own, so unlike the George Boole port there is no
 assertion table to carry over; these are written against the JS behaviour
 directly, with the Wii port's README as a second reading of the same rules.
 
-Nothing here imports texastoast or Textual.
+Nothing here imports the engine or Textual.
 """
 
 from __future__ import annotations

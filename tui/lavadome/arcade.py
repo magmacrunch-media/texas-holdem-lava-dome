@@ -27,7 +27,7 @@ INFO = GameInfo(
 
 
 class LavaDomeGame:
-    """Satisfies :class:`texastoast.arcade.ArcadeGame`."""
+    """Satisfies :class:`magmacrunch.engine.arcade.ArcadeGame`."""
 
     info = INFO
 

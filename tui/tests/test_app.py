@@ -10,7 +10,7 @@ import asyncio
 
 import pytest
 
-pytest.importorskip("textual", reason='needs: pip install -e ".[dev]" with texastoast[tui]')
+pytest.importorskip("textual", reason='needs: pip install -e ".[dev]"')
 
 from magmacrunch.engine import scores as score_mod  # noqa: E402
 from magmacrunch.engine.core.tui_host import TuiHost  # noqa: E402

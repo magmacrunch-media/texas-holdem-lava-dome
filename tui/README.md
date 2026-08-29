@@ -81,7 +81,8 @@ The game declares itself through an entry point, so anything enumerating
 thld = "lavadome.arcade:GAME"
 ```
 
-It does not own the terminal. A `texastoast.core.tui_host.TuiHost` does, and
+It does not own the terminal. A `magmacrunch.engine.core.tui_host.TuiHost`
+does, and
 `LavaDomeApp` is handed one — which is what lets the same code run as its own
 command and be seated by a launcher without knowing which happened. Esc from
 the title screen ends a standalone session and returns to the arcade menu under
@@ -104,10 +105,12 @@ lavadome/
 ```
 
 Everything above `theme.py` imports nothing outside the standard library — not
-texastoast, not Textual. A test enforces it. The engine is
-[texastoast](../../texastoast) with its terminal backend, and the game draws
-through its `Renderer`/`UISurface` protocols rather than against Textual, so
-the planned hand-written ANSI backend will be a swap and not a rewrite.
+the engine, not Textual. A test enforces it. The engine is
+`magmacrunch.engine`, which arrives with the
+[magmacrunch](https://pypi.org/project/magmacrunch/) package this one depends
+on, and the game draws through its `Renderer`/`UISurface` protocols rather
+than against Textual, so the planned hand-written ANSI backend will be a swap
+and not a rewrite.
 
 Modality is the scene stack, not a flag: `TitleScene` sits at the bottom, a run
 pushes over it, and the rules screen pushes over whichever is showing.

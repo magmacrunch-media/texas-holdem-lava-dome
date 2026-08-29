@@ -6,7 +6,7 @@ rules screen pushes over whichever is showing. Nothing holds an `on_title`
 boolean, and a scene that has been popped stops getting frames because the
 stack simply does not call it.
 
-Everything draws through texastoast's ``Renderer``/``UISurface`` protocols and
+Everything draws through the engine's ``Renderer``/``UISurface`` protocols and
 none of it knows what Textual is.
 """
 
@@ -80,7 +80,7 @@ def _draw_title(renderer, cx: int) -> int:
     Every rung shows the *whole* name - a title that fits by dropping half of
     itself is not the title. The last rung is the plain banner, which is the
     whole name in one line of text, so a short terminal loses the lettering
-    and never the name. See :mod:`texastoast.ui.bigtext`.
+    and never the name. See :mod:`magmacrunch.engine.ui.bigtext`.
     """
     budget = _menu_box_top(renderer) - 1
     for big, rest in theme.TITLE_LADDER:

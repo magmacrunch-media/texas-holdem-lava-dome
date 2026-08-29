@@ -27,7 +27,7 @@ dev = ["pytest>=7.0", "ruff>=0.6"]
 lava-dome = "lavadome.__main__:main"
 
 # Found by a launcher enumerating installed games. Declaring it costs nothing
-# when the game is run on its own — see texastoast.arcade.
+# when the game is run on its own — see magmacrunch.engine.arcade.
 [project.entry-points."magmacrunch.games"]
 thld = "lavadome.arcade:GAME"
 

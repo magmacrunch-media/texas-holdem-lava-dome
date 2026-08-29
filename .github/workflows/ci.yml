@@ -41,7 +41,7 @@ jobs:
   #
   # And this is where the differential test lives — the Python evaluator run
   # against the real JavaScript over thousands of hands. It needs node, not
-  # texastoast. The web build has no test suite of its own, so this is the only
+  # the engine. The web build has no test suite of its own, so this is the only
   # thing standing in for one.
   tui-rules:
     name: tui rules (no engine)
@@ -71,7 +71,7 @@ jobs:
 
       # LAVADOME_REQUIRE_ORACLE turns a missing oracle into a failure instead of
       # letting the differential tests skip and report green — the same guard
-      # texastoast's conftest applies to a missing display.
+      # texastoast's conftest applied to a missing display.
       - name: Rules and evaluator, with no engine on the machine
         working-directory: tui
         env:
@@ -92,8 +92,9 @@ jobs:
         with:
           python-version: "3.12"
 
-      # texastoast[tui]>=0.6.0 comes from pyproject.toml - 0.6.0 is on PyPI,
-      # so there is nothing to install by hand.
+      # magmacrunch comes from pyproject.toml and is on PyPI, so there is
+      # nothing to install by hand. It carries the engine and, through it,
+      # textual and rich.
       - name: Install the game
         working-directory: tui
         run: pip install -e ".[dev]"

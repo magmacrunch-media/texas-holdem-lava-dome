@@ -11,7 +11,7 @@ label, whose song titles supply the flavour text on the depth screens.
 |---------|--------|--------|---------------|
 | Browser | [`web/`](web/) | [adenosine](https://github.com/magmacrunchmedia/adenosine) | [magmacrunch.com/arcade/solitaire_THLD](https://magmacrunch.com/arcade/solitaire_THLD/) |
 | Wii | [`wii/`](wii/) | [magnolia](https://github.com/magmacrunchmedia/magnolia) | Homebrew Channel |
-| Terminal | [`tui/`](tui/) | [texastoast](https://pypi.org/project/texastoast/) | any terminal |
+| Terminal | [`tui/`](tui/) | [magmacrunch.engine](https://pypi.org/project/magmacrunch/) | any terminal |
 
 ## Layout
 
@@ -23,7 +23,7 @@ label, whose song titles supply the flavour text on the depth screens.
   checked out beside this repo (`../../magnolia` from inside `wii/`). See
   [`wii/README.md`](wii/README.md).
 - `tui/` — the terminal version. Runs on the
-  [texastoast](https://pypi.org/project/texastoast/) engine's terminal backend.
+  [magmacrunch.engine](https://pypi.org/project/magmacrunch/) engine's terminal backend.
   Install with `pipx install magmacrunch-thld` and launch with `lava-dome`.
   Also available as part of the
   [magmacrunch](https://pypi.org/project/magmacrunch/) arcade.

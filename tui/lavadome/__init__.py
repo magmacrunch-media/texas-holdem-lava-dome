@@ -1,7 +1,7 @@
 """Texas Hold'Em Lava Dome — terminal version.
 
 A third sibling to ``web/`` (adenosine, browser) and ``wii/`` (magnolia, C99),
-built on texastoast's terminal backend.
+built on the `magmacrunch.engine` terminal backend.
 
 Solo Texas Hold'Em with no opponent. The dome charges an escalating ante each
 round and scores your hand against a threshold that climbs with it: beat the
