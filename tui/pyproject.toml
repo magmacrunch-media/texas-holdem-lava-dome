@@ -8,7 +8,7 @@ build-backend = "hatchling.build"
 # are both already taken there by other people. See ../../george-boole/tui/
 # PACKAGING.md for the plan this belongs to.
 name = "magmacrunch-thld"
-version = "0.3.0"
+version = "0.4.0"
 description = "Texas Hold'Em Lava Dome — terminal version"
 readme = "README.md"
 license = "PolyForm-Noncommercial-1.0.0"
@@ -18,7 +18,13 @@ authors = [{ name = "magmacrunch media" }]
 # The engine, with its terminal backend. lavadome/cards.py, handeval.py,
 # config.py, state.py, dome.py, betting.py and dealer.py depend on neither and
 # are importable on their own.
-dependencies = ["magmacrunch>=0.4.0"]
+#
+# 0.5.0 is the floor because `GameInfo.score_key` is new in it, and this game
+# is the reason that field exists - see lavadome/arcade.py. Against an older
+# engine the dataclass rejects the argument outright, so the entry point
+# raises on load and the arcade reports this cabinet as broken rather than
+# seating it. A floor that lets that happen is not a floor.
+dependencies = ["magmacrunch>=0.5.0"]
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "ruff>=0.6"]

@@ -723,6 +723,47 @@ def test_the_board_is_filed_under_the_key_the_browser_uses():
     assert LavaDomeApp.SCORE_KEY == "solitaire-thld"
 
 
+def test_the_arcade_is_told_where_this_cabinet_files_its_scores():
+    """The menu draws a best score per card, and finds it by `scoreboard`.
+
+    This game is the reason `GameInfo.score_key` exists: it is seated as
+    `thld` and scores as `solitaire-thld`, so a launcher reading `key` opens
+    an empty board. That failure has no symptom - an unfound scoreboard and an
+    unplayed game both show nothing - which is exactly why it is asserted here
+    rather than left to be noticed.
+    """
+    from lavadome.arcade import INFO
+
+    assert INFO.key == "thld"
+    assert INFO.scoreboard == "solitaire-thld"
+
+
+def test_the_game_and_the_arcade_agree_on_the_key():
+    """One literal, read twice. They were two literals in two modules, which
+    is the arrangement that lets a rename fix one of them."""
+    from lavadome import arcade
+
+    assert LavaDomeApp.SCORE_KEY == arcade.SCORE_KEY
+    assert arcade.INFO.scoreboard == LavaDomeApp.SCORE_KEY
+
+
+def test_listing_this_cabinet_does_not_import_the_game():
+    """`arcade.py` is what an arcade loads per installed game just to draw a
+    row, and it now owns the score key - which must not have dragged the
+    evaluator, the screens or Textual in behind it."""
+    import subprocess
+    import sys
+
+    code = (
+        "import sys, lavadome.arcade; "
+        "print([m for m in ('lavadome.app', 'lavadome.scenes', "
+        "'lavadome.handeval', 'textual') if m in sys.modules])"
+    )
+    out = subprocess.run([sys.executable, "-c", code], capture_output=True,
+                         text=True, check=True)
+    assert out.stdout.strip() == "[]", out.stdout
+
+
 def test_what_goes_on_the_board_is_total_wealth_not_the_bank():
     """js/state.js records totalScore: this.totalWealth, which is chips plus
     bank. Recording the other one would put a different quantity under the

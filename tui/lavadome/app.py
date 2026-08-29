@@ -20,6 +20,7 @@ from typing import Any
 
 from magmacrunch.engine.scores import ScoreBook
 
+from lavadome.arcade import SCORE_KEY as ARCADE_SCORE_KEY
 from lavadome.scenes import GameScene, RulesScene, TitleScene
 
 
@@ -29,7 +30,12 @@ class LavaDomeApp:
     #: The key the browser build posts under. Not "thld" — the web has filed
     #: this under solitaire-thld since before the rename, and a shared board
     #: later has to mean a shared board rather than two with different names.
-    SCORE_KEY = "solitaire-thld"
+    #:
+    #: Read from :mod:`lavadome.arcade` rather than written out again here.
+    #: The arcade menu needs the same string to draw this cabinet's best score
+    #: without importing any of this, so that module owns it — and one literal
+    #: cannot disagree with itself.
+    SCORE_KEY = ARCADE_SCORE_KEY
 
     def __init__(self, host: Any, seed: int | None = None,
                  ascii_only: bool = False, scores: ScoreBook | None = None):
