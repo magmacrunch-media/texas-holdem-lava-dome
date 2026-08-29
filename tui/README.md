@@ -58,6 +58,19 @@ different game.
 
 Needs a terminal at least 58x22.
 
+## High scores
+
+Kept on disk, so a record outlives the session. Filed under `solitaire-thld` —
+the key the browser build has used since before the rename — and recording the
+same quantity the browser does: **total wealth**, `chips + bank`, not the bank
+alone. Filing a different number under the same name is the sort of thing
+nobody notices until the numbers are wrong.
+
+The moment that counts is leaving the dome, not losing a hand. Both ways out
+reach it: escaping banks the chips, and busting on the ante keeps whatever was
+banked already. Each entry keeps the rounds survived and whether you got out,
+the same two extras the browser stores.
+
 ## Launchable by an arcade
 
 The game declares itself through an entry point, so anything enumerating
