@@ -18,7 +18,7 @@ from __future__ import annotations
 import random
 from typing import Any
 
-from texastoast.scores import ScoreBook
+from magmacrunch.engine.scores import ScoreBook
 
 from lavadome.scenes import GameScene, RulesScene, TitleScene
 
@@ -154,7 +154,7 @@ class LavaDomeApp:
 def run(seed: int | None = None, ascii_only: bool = False,
         skip_title: bool = False) -> None:
     """Play Lava Dome as its own command."""
-    from texastoast.core.tui_host import TuiHost
+    from magmacrunch.engine.core.tui_host import TuiHost
 
     from lavadome.arcade import GAME
 

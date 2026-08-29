@@ -18,7 +18,7 @@ authors = [{ name = "magmacrunch media" }]
 # The engine, with its terminal backend. lavadome/cards.py, handeval.py,
 # config.py, state.py, dome.py, betting.py and dealer.py depend on neither and
 # are importable on their own.
-dependencies = ["texastoast[tui]>=0.11.0"]
+dependencies = ["magmacrunch>=0.2.0"]
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "ruff>=0.6"]

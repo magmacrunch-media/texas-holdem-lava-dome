@@ -12,9 +12,9 @@ import pytest
 
 pytest.importorskip("textual", reason='needs: pip install -e ".[dev]" with texastoast[tui]')
 
-from texastoast import scores as score_mod  # noqa: E402
-from texastoast.core.tui_host import TuiHost  # noqa: E402
-from texastoast.ui import bigtext  # noqa: E402
+from magmacrunch.engine import scores as score_mod  # noqa: E402
+from magmacrunch.engine.core.tui_host import TuiHost  # noqa: E402
+from magmacrunch.engine.ui import bigtext  # noqa: E402
 
 from lavadome import (  # noqa: E402
     config,
@@ -69,7 +69,7 @@ def hand(*specs: str) -> list[Card]:
 
 
 async def _piloted(app: LavaDomeApp, size=(80, 24)):
-    from texastoast.core.tui_game import _GameApp
+    from magmacrunch.engine.core.tui_game import _GameApp
 
     textual_app = _GameApp(app.host.game, app.host.game.surface)
     app.host.game._app = textual_app
@@ -476,7 +476,7 @@ def test_resizing_does_not_corrupt_the_layout():
 
 
 def test_a_card_shows_its_rank_twice_mirrored():
-    from texastoast.render.tui import TuiRenderer
+    from magmacrunch.engine.render.tui import TuiRenderer
 
     r = TuiRenderer(10, 4)
     theme.draw_card(r, 0, 0, Card("spades", "A"))
@@ -486,7 +486,7 @@ def test_a_card_shows_its_rank_twice_mirrored():
 
 
 def test_a_ten_still_fits_the_card():
-    from texastoast.render.tui import TuiRenderer
+    from magmacrunch.engine.render.tui import TuiRenderer
 
     r = TuiRenderer(10, 4)
     theme.draw_card(r, 0, 0, Card("diamonds", "10"))
@@ -494,7 +494,7 @@ def test_a_ten_still_fits_the_card():
 
 
 def test_ascii_mode_swaps_the_suit_glyphs_for_letters():
-    from texastoast.render.tui import TuiRenderer
+    from magmacrunch.engine.render.tui import TuiRenderer
 
     r = TuiRenderer(10, 4)
     theme.draw_card(r, 0, 0, Card("hearts", "K"), ascii_only=True)
@@ -504,7 +504,7 @@ def test_ascii_mode_swaps_the_suit_glyphs_for_letters():
 
 
 def test_an_undealt_slot_draws_nothing_but_a_background():
-    from texastoast.render.tui import TuiRenderer
+    from magmacrunch.engine.render.tui import TuiRenderer
 
     r = TuiRenderer(10, 4)
     theme.draw_card(r, 0, 0, None)
@@ -513,7 +513,7 @@ def test_an_undealt_slot_draws_nothing_but_a_background():
 
 
 def test_the_board_always_shows_five_positions():
-    from texastoast.render.tui import TuiRenderer
+    from magmacrunch.engine.render.tui import TuiRenderer
 
     r = TuiRenderer(40, 4)
     width = theme.draw_card_row(r, 0, 0, hand("As", "Kh"), slots=5)
@@ -524,7 +524,7 @@ def test_the_board_always_shows_five_positions():
 
 
 def test_red_and_black_suits_are_inked_differently():
-    from texastoast.render.tui import TuiRenderer
+    from magmacrunch.engine.render.tui import TuiRenderer
 
     r = TuiRenderer(10, 4)
     theme.draw_card(r, 0, 0, Card("hearts", "9"))
@@ -618,7 +618,7 @@ class _Blank:
 
 
 def test_the_entry_point_object_is_a_valid_arcade_game():
-    from texastoast.arcade import ArcadeGame
+    from magmacrunch.engine.arcade import ArcadeGame
 
     assert isinstance(GAME, ArcadeGame)
 
@@ -664,8 +664,8 @@ def test_escape_from_the_title_ends_a_standalone_session():
 
 
 def test_seating_applies_the_declared_frame_rate_and_input():
-    from texastoast.core.loop import GameLoop
-    from texastoast.core.scheduler import ManualScheduler
+    from magmacrunch.engine.core.loop import GameLoop
+    from magmacrunch.engine.core.scheduler import ManualScheduler
 
     host = TuiHost(title="t", fps=60, hold_ms=999)
     host._game._loop = GameLoop(ManualScheduler(), lambda dt: None,
@@ -746,7 +746,7 @@ def test_a_run_records_the_rounds_and_whether_they_got_out():
 
 
 def test_the_score_survives_the_process(tmp_path):
-    from texastoast.scores import ScoreBook
+    from magmacrunch.engine.scores import ScoreBook
 
     book = ScoreBook(LavaDomeApp.SCORE_KEY, directory=tmp_path)
     LavaDomeApp(TuiHost(title="t"), scores=book).record(900, "jam")

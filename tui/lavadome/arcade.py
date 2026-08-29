@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from texastoast.arcade import GameInfo
+from magmacrunch.engine.arcade import GameInfo
 
 from lavadome import theme
 

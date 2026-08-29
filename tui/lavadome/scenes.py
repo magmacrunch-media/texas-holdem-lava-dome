@@ -15,8 +15,10 @@ from __future__ import annotations
 import textwrap
 from dataclasses import replace
 
-from texastoast import scores as scoring
-from texastoast.ui import DEFAULT_THEME, Menu, bigtext
+from magmacrunch.engine import scores as scoring
+from magmacrunch.engine.ui.theme import DEFAULT_THEME
+from magmacrunch.engine.ui.menu import Menu
+from magmacrunch.engine.ui import bigtext
 
 from lavadome import config, theme
 from lavadome.betting import Betting
