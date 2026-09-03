@@ -38,7 +38,12 @@ import vm from 'node:vm';
 const here = dirname(fileURLToPath(import.meta.url));
 
 const NPM_PACKAGE = '@magmacrunch/adenosine-cards';
-const VENDORED = resolve(here, '../../../website/arcade/shared/adenosine-cards.js');
+// The website checkout: beside this repo -- the documented layout, and what a
+// fresh clone gets -- or under a web/ group one level up. First one that exists wins.
+const VENDORED = [
+  '../../../website/arcade/shared/adenosine-cards.js',
+  '../../../../web/website/arcade/shared/adenosine-cards.js',
+].map((p) => resolve(here, p)).find(existsSync) ?? resolve(here, '../../../website/arcade/shared/adenosine-cards.js');
 
 /** The published package. Present in CI, and on a dev box that ran npm install. */
 async function fromNpm() {

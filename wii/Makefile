@@ -17,11 +17,24 @@ include $(DEVKITPPC)/wii_rules
 endif
 
 #---------------------------------------------------------------------------------
+# The magnolia engine. Checked out beside this repo -- the documented layout, and
+# what a fresh clone gets -- or under an engines/ group one level up. Override with
+# `make MAGNOLIA=<path>` for anywhere else.
+MAGNOLIA    ?= $(firstword $(wildcard ../../magnolia ../../../engines/magnolia))
+# Only a real build needs the engine present. The host tests link this game's own
+# sources, and CI runs `make test` from a single checkout with no magnolia beside
+# it -- so this must not fire there. Mirrors the DEVKITPPC guard above.
+ifeq ($(filter test,$(MAKECMDGOALS)),)
+ifeq ($(strip $(MAGNOLIA)),)
+$(error magnolia not found. Expected ../../magnolia or ../../../engines/magnolia; set MAGNOLIA=<path>)
+endif
+endif
+#---------------------------------------------------------------------------------
 TARGET      := texas-holdem-lava-dome
 BUILD       := build
-SOURCES     := source ../../magnolia/source ../../magnolia/font
+SOURCES     := source $(MAGNOLIA)/source $(MAGNOLIA)/font
 DATA        :=
-INCLUDES    := ../../magnolia ../../magnolia/source ../../magnolia/font source
+INCLUDES    := $(MAGNOLIA) $(MAGNOLIA)/source $(MAGNOLIA)/font source
 
 CFLAGS      = -g -O2 -Wall $(MACHDEP) $(INCLUDE)
 CXXFLAGS    = $(CFLAGS)
