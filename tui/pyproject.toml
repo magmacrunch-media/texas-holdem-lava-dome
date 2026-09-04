@@ -8,7 +8,7 @@ build-backend = "hatchling.build"
 # are both already taken there by other people. See ../../george-boole/tui/
 # PACKAGING.md for the plan this belongs to.
 name = "magmacrunch-thld"
-version = "0.4.0"
+version = "0.5.0"
 description = "Texas Hold'Em Lava Dome — terminal version"
 readme = "README.md"
 license = "PolyForm-Noncommercial-1.0.0"
@@ -24,7 +24,10 @@ authors = [{ name = "magmacrunch media" }]
 # engine the dataclass rejects the argument outright, so the entry point
 # raises on load and the arcade reports this cabinet as broken rather than
 # seating it. A floor that lets that happen is not a floor.
-dependencies = ["magmacrunch>=0.5.0"]
+# 0.6.0 is where magmacrunch.engine.ui.glyphs arrived, and this game
+# imports it in run(). Resolved against 0.5.0 the install succeeds and the
+# game dies on launch, which is the worst place to learn about a pin.
+dependencies = ["magmacrunch>=0.6.0"]
 
 [project.optional-dependencies]
 dev = ["pytest>=7.0", "ruff>=0.6"]

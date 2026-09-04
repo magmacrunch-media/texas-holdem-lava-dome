@@ -882,3 +882,28 @@ def test_a_game_launched_on_its_own_does_not_promise_an_arcade():
     app = hosted()
     app.host.scene.render()
     assert scenes.ARCADE_HELP not in buffer_text(app)
+
+
+def test_the_version_is_the_one_the_package_declares():
+    """``__version__`` and pyproject must agree.
+
+    They did not: the literal sat at 0.1.0 while 0.5.0 shipped, four releases
+    behind. The same rot the arcade repo found in itself, and for the same
+    reason -- nothing reads ``__version__``, so nothing notices. This is the
+    reader that would have.
+    """
+    import pathlib
+    import sys
+
+    if sys.version_info >= (3, 11):
+        import tomllib
+    else:
+        tomllib = pytest.importorskip("tomli", reason="needs tomli under 3.10")
+
+    import lavadome
+
+    root = pathlib.Path(__file__).resolve().parent.parent
+    declared = tomllib.loads(
+        (root / "pyproject.toml").read_text(encoding="utf-8")
+    )["project"]["version"]
+    assert lavadome.__version__ == declared

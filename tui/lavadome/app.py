@@ -161,11 +161,20 @@ def run(seed: int | None = None, ascii_only: bool = False,
         skip_title: bool = False) -> None:
     """Play Lava Dome as its own command."""
     from magmacrunch.engine.core.tui_host import TuiHost
+    from magmacrunch.engine.ui.glyphs import Glyphs
 
     from lavadome.arcade import GAME
 
+    # `ascii_only` now says two things, and they agree: LavaDomeApp uses
+    # it for the card labels, as it always has, and the renderer uses it
+    # for everything else this game draws -- the triangles in the bet
+    # meter, the shade in the dome, the arrows in the hint line, none of
+    # which the flag used to reach. The suits come out the same letters
+    # either way; `test_the_suits_agree_with_lava_domes_own_ascii_mode`
+    # in the engine is what keeps that true.
     host = TuiHost(title=GAME.info.title, fps=GAME.info.fps,
-                   hold_ms=GAME.info.hold_ms)
+                   hold_ms=GAME.info.hold_ms,
+                   glyphs=Glyphs.detect(ascii_only=ascii_only))
     app = LavaDomeApp(host, seed, ascii_only)
     host.push_scene(app.root_scene)
     if skip_title:

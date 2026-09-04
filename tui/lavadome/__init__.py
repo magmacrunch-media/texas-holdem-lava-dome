@@ -10,4 +10,4 @@ choose to bank chips — safe, and the banked total is your score — or leave t
 in play. The session ends when you go bust, or when you escape voluntarily.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.5.0"

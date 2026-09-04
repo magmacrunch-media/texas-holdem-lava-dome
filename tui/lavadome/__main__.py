@@ -20,8 +20,11 @@ def main() -> None:
     )
     parser.add_argument(
         "--ascii", action="store_true", dest="ascii_only",
-        help="draw suits as H/D/C/S instead of the glyphs, for terminals "
-             "whose font lacks them",
+        help="draw with plain ASCII instead of block, arrow and suit "
+             "glyphs. Detected automatically from the terminal's "
+             "encoding; this forces it, for a font that lacks the "
+             "pictures. MAGMACRUNCH_ASCII=1 says the same for every "
+             "cabinet at once.",
     )
     args = parser.parse_args()
 

@@ -30,7 +30,8 @@ python -m lavadome        # or the installed `lava-dome` command
 ```
 python -m lavadome --play           # skip the title screen
 python -m lavadome --seed 42        # a reproducible shuffle
-python -m lavadome --ascii          # suits as H/D/C/S, for fonts without ♥♦♣♠
+python -m lavadome --ascii          # plain ASCII throughout, for fonts
+                                    # without ♥♦♣♠ — or ▲▼, or ░
 ```
 
 Published as **`magmacrunch-thld`** — prefixed for the same reason as
@@ -58,6 +59,34 @@ stay on its street would be an open betting loop, which is a longer and
 different game.
 
 Needs a terminal at least 58x22.
+
+## When the terminal cannot draw the glyphs
+
+Not every console can encode what these games draw. Windows' two common
+codepages are the ones that bite: cp1252 has none of the block elements,
+arrows or suits, and cp437 has the blocks and none of the arrows, stars or
+suits. The engine asks the terminal what it can encode and substitutes what it
+cannot, one **group** at a time -- so a set of related glyphs never comes back
+half translated, and a terminal that can draw the blocks keeps them even
+though it has lost the arrows.
+
+Detection is automatic. Two ways to override it, for the case no probe can
+see -- an encoding that accepts the character in a font that has no picture
+for it:
+
+```
+lavadome --ascii              this game, this run
+MAGMACRUNCH_ASCII=1      every cabinet, always
+```
+
+Every substitute is exactly one cell wide, so a plain screen has the same
+layout as a fancy one rather than a reflowed approximation of it.
+
+`--ascii` used to mean the suits and only the suits, which left the bet
+meter's `▲▼` and the dome's `░` unhandled on exactly the terminals the
+flag existed for. It now means the whole screen. The suits come out the
+same `H/D/C/S` by either route, and a test in each repo keeps them
+agreeing.
 
 ## High scores
 
