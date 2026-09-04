@@ -10,4 +10,10 @@ choose to bank chips — safe, and the banked total is your score — or leave t
 in play. The session ends when you go bust, or when you escape voluntarily.
 """
 
+# Kept in step with ``pyproject.toml`` by hand, the way ``magmacrunch`` does
+# it: a literal answers the same in a source checkout as in an installed
+# wheel, which asking importlib.metadata would not. It drifted four releases
+# behind — the release workflow compares the git tag against pyproject and
+# never looks here, and nothing reads this — so the check now lives in
+# ``tests/test_packaging.py``, and bumping one without the other fails there.
 __version__ = "0.5.0"
