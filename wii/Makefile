@@ -156,7 +156,14 @@ all: $(BUILD)
 
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
-	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
+# MAGNOLIA is passed down rather than re-derived: this recursion runs with
+# the working directory set to $(BUILD), one level below the directory the
+# wildcard above is written against, so re-resolving it there finds nothing
+# and the guard at the top of this file fires with the engine sitting right
+# where it belongs. An absolute path is not a workaround -- the devkitPro
+# rules build include paths as $(TOPDIR)/$(dir), which only composes with a
+# relative one.
+	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile MAGNOLIA=$(MAGNOLIA)
 
 clean:
 	@echo clean ...
